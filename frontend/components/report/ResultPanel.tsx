@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Check, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "lucide-react";
+import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "lucide-react";
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
@@ -21,6 +21,11 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
   const pct = Math.round(d.confidence * 100);
   const unclear = d.disease.toLowerCase() === "unclear";
   const healthy = d.disease.toLowerCase() === "healthy";
+  // "Second opinion" trust state: uncertain when the model is under the server's 80% threshold, or when it
+  // disagrees with Gemini (softmax confidence alone can't catch confidently-wrong answers on unknown crops).
+  const cls = report.classifier;
+  const lowConfidence = !!cls && (cls.lowConfidence ?? cls.confidence < 0.8);
+  const uncertain = !!cls && (lowConfidence || cls.agreesWithGemini === false);
   const outbreak = report.alert ? groupOutbreaks(reports).find((o) => o.key === report.alertReason) : undefined;
 
   async function copyLink() {
@@ -99,6 +104,47 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
               <>
                 {tr.status === "error" && <p className="mb-2 text-xs text-muted-foreground">{t("result.noTranslation")}</p>}
                 <p className="whitespace-pre-line text-[15px] leading-relaxed">{tr.advisory}</p>
+              </>
+            )}
+          </section>
+        )}
+
+        {cls && (
+          <section
+            className={
+              uncertain
+                ? "rounded-xl border border-severity-medium/40 bg-severity-medium/5 p-3.5"
+                : "rounded-xl border bg-background p-3.5"
+            }
+          >
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Cpu className={uncertain ? "size-4 text-severity-medium" : "size-4 text-primary"} /> {t("result.model.title")}
+            </h3>
+            {uncertain ? (
+              <>
+                <p className="mt-2 text-sm text-severity-medium">{t(lowConfidence ? "result.model.uncertain" : "result.model.differs")}</p>
+                {/* The raw guess stays visible, but clearly secondary. */}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {cls.crop}
+                  {cls.condition ? ` · ${cls.condition}` : ""} — {Math.round(cls.confidence * 100)}%
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-lg font-medium">
+                  {cls.crop}
+                  {cls.condition && <span className="text-muted-foreground">·</span>}
+                  {cls.condition}
+                  <span className="text-sm font-normal text-muted-foreground">{Math.round(cls.confidence * 100)}%</span>
+                </p>
+                <ul className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
+                  {cls.top3.slice(1).map((c) => (
+                    <li key={c.label}>
+                      {c.label} — {Math.round(c.confidence * 100)}%
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">{t("result.model.note")}</p>
               </>
             )}
           </section>

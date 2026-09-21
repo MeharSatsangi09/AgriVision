@@ -19,6 +19,20 @@ export interface Report {
   advisoryTranslations?: Record<string, string>;
   diseaseTranslations?: Record<string, string>;
   followUpTranslations?: Record<string, string>;
+  // Our own trained model's answer, shown side by side with Gemini's diagnosis (optional).
+  classifier?: ClassifierResult;
+}
+
+export interface ClassifierResult {
+  label: string;
+  crop: string;
+  condition: string;
+  confidence: number;
+  lowConfidence?: boolean; // confidence below the server threshold (80%)
+  agreesWithGemini?: boolean; // classifier's answer matches Gemini's diagnosis
+  top3: { label: string; confidence: number }[];
+  model: string;
+  ms: number;
 }
 
 export interface UploadFailure {

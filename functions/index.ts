@@ -4,7 +4,7 @@ import { getStorage, getDownloadURL } from "firebase-admin/storage";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { runPipeline, QuotaError } from "./agents/pipeline";
+import { runAnalysis, QuotaError } from "./agents/pipeline";
 import { runTrendCheck } from "./agents/trendAgent";
 import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
@@ -20,7 +20,7 @@ async function recordFailure(path: string, reason: "quota" | "location" | "other
   await getFirestore().collection("uploadErrors").add({ path, reason, timestamp: new Date().toISOString() });
 }
 
-// Storage upload -> ADK pipeline (Diagnosis -> Advisory) -> Firestore `reports` -> trend check.
+// Storage upload -> ADK pipeline (Diagnosis -> Advisory) + our trained classifier side by side -> Firestore `reports` -> trend check.
 // minInstances: 1 keeps one instance warm so a demo upload doesn't wait ~45 s for a cold start
 // (small idle cost; set to 0 to turn off).
 export const processUpload = onObjectFinalized(
@@ -38,13 +38,14 @@ export const processUpload = onObjectFinalized(
     const [buf] = await file.download();
 
     try {
-      const { diagnosis, advisory } = await runPipeline(buf.toString("base64"), contentType, lat, lng);
+      const { diagnosis, advisory, classifier } = await runAnalysis(buf, contentType, lat, lng, bucketName);
       await writeReport({
         photoUrl: await getDownloadURL(file),
         lat: round2(lat),
         lng: round2(lng),
         diagnosis,
         advisory,
+        ...(classifier ? { classifier } : {}),
       });
     } catch (err) {
       console.error("processUpload failed:", err);

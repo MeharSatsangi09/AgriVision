@@ -1,6 +1,7 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import type { Diagnosis } from "../agents/diagnosisAgent";
 import type { TrendStore } from "./trendTools";
+import type { ClassifierResult } from "./classifierTool";
 
 const toTrend = (d: FirebaseFirestore.QueryDocumentSnapshot) => {
   const r = d.data();
@@ -21,6 +22,7 @@ export interface ReportInput {
   lng: number;
   diagnosis: Diagnosis;
   advisory: string;
+  classifier?: ClassifierResult; // our own trained model's answer (side by side with Gemini)
 }
 
 // Plain function: called deterministically by the Cloud Function after the pipeline runs.

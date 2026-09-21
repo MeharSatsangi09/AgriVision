@@ -16,6 +16,7 @@ functions/.env*
 /design.md
 /memory.md
 /custom-model-task.md
+/*-task.md
 /.claude/
 
 # Local tooling
