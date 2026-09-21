@@ -1,11 +1,12 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
 import OutbreakMap from "@/components/map/OutbreakMap";
 import ResultPanel from "@/components/report/ResultPanel";
 import SeverityBadge from "@/components/report/SeverityBadge";
 import { useData } from "@/lib/data";
+import { useSeen } from "@/lib/seen";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { timeAgo, titleCase } from "@/lib/format";
 import { SEVERITY_COLOR } from "@/lib/maps";
@@ -22,6 +23,13 @@ const PERIODS = [
 export default function MapView() {
   const { t, lang } = useI18n();
   const { reports, ready } = useData();
+  const { active, loaded, markSeen } = useSeen();
+
+  // The red hotspot circles are on screen here, so every active outbreak counts as seen (the circles themselves stay).
+  const activeKeys = active.join("\n");
+  useEffect(() => {
+    if (ready && loaded && activeKeys) markSeen(activeKeys.split("\n"));
+  }, [ready, loaded, activeKeys, markSeen]);
   const focus = useSearchParams().get("focus");
   const [selectedId, setSelectedId] = useState<string | null>(focus);
   const [severity, setSeverity] = useState<Severity | "all">("all");

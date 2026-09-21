@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "lucide-react";
@@ -8,6 +8,7 @@ import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-
 import SeverityBadge from "@/components/report/SeverityBadge";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useData, groupOutbreaks } from "@/lib/data";
+import { useSeen } from "@/lib/seen";
 import { useTranslated } from "@/lib/useTranslated";
 import { roundCoord, timeAgo } from "@/lib/format";
 import type { Report } from "@/lib/types";
@@ -17,6 +18,7 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
   const { reports } = useData();
   const tr = useTranslated(report, lang);
   const [copied, setCopied] = useState(false);
+  const { loaded, markSeen } = useSeen();
   const d = report.diagnosis;
   const pct = Math.round(d.confidence * 100);
   const unclear = d.disease.toLowerCase() === "unclear";
@@ -27,6 +29,12 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
   const lowConfidence = !!cls && (cls.lowConfidence ?? cls.confidence < 0.8);
   const uncertain = !!cls && (lowConfidence || cls.agreesWithGemini === false);
   const outbreak = report.alert ? groupOutbreaks(reports).find((o) => o.key === report.alertReason) : undefined;
+
+  // Showing the outbreak notice below means this viewer has seen the outbreak.
+  const outbreakKey = outbreak?.key;
+  useEffect(() => {
+    if (outbreakKey && loaded) markSeen([outbreakKey]);
+  }, [outbreakKey, loaded, markSeen]);
 
   async function copyLink() {
     try {
