@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Crop photos: create-only, images under 8 MB, with numeric lat/lng metadata.
+    // No client reads/updates/deletes: photos are shown via tokenized download URLs
+    // (created by the Cloud Function), which bypass these rules.
+    match /uploads/{file} {
+      allow read: if false;
+      allow update, delete: if false;
+      allow create: if request.resource.size < 8 * 1024 * 1024
+                    && request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)')
+                    && request.resource.metadata.lat.matches('^-?[0-9]+(\\.[0-9]+)?$')
+                    && request.resource.metadata.lng.matches('^-?[0-9]+(\\.[0-9]+)?$');
+    }
+  }
+}

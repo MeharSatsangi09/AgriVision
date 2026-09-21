@@ -1,0 +1,133 @@
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "motion/react";
+import { Check, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "lucide-react";
+import { Progress } from "@/components/animate-ui/components/radix/progress";
+import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
+import SeverityBadge from "@/components/report/SeverityBadge";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useData, groupOutbreaks } from "@/lib/data";
+import { useTranslated } from "@/lib/useTranslated";
+import { roundCoord, timeAgo } from "@/lib/format";
+import type { Report } from "@/lib/types";
+
+export default function ResultPanel({ report, onAnother }: { report: Report; onAnother?: () => void }) {
+  const { t, lang } = useI18n();
+  const { reports } = useData();
+  const tr = useTranslated(report, lang);
+  const [copied, setCopied] = useState(false);
+  const d = report.diagnosis;
+  const pct = Math.round(d.confidence * 100);
+  const unclear = d.disease.toLowerCase() === "unclear";
+  const healthy = d.disease.toLowerCase() === "healthy";
+  const outbreak = report.alert ? groupOutbreaks(reports).find((o) => o.key === report.alertReason) : undefined;
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${location.origin}/report/${report.id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="grid gap-6 rounded-2xl border bg-card p-5 shadow-sm md:grid-cols-[260px_1fr] md:p-6"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={report.photoUrl} alt="" className="aspect-square w-full max-w-64 rounded-xl object-cover md:max-w-none" />
+
+      <div className="min-w-0 space-y-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-2xl font-semibold tracking-tight">{tr.disease}</h2>
+            {!unclear && !healthy && <SeverityBadge severity={d.severity} />}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {timeAgo(report.timestamp, lang)} · {roundCoord(report.lat)}°N, {roundCoord(report.lng)}°E
+          </p>
+        </div>
+
+        {outbreak && (
+          <div className="flex gap-3 rounded-xl border border-severity-high/30 bg-severity-high/10 p-3 text-sm text-severity-high">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            <div>
+              <p className="font-semibold">{t("result.outbreak")}</p>
+              <p>{t("alerts.summary", { n: outbreak.reports.length, d: tr.disease })}</p>
+            </div>
+          </div>
+        )}
+
+        {!unclear && (
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="flex items-baseline font-semibold text-foreground">
+              <SlidingNumber number={pct} fromNumber={0} />%
+            </span>
+            <span>{t("result.confidence")}</span>
+            <Progress value={pct} className="max-w-56" />
+          </div>
+        )}
+
+        {unclear && <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">{t("result.unclear")}</p>}
+        {d.needsReview && !unclear && (
+          <p className="rounded-xl bg-severity-medium/10 p-3 text-sm text-severity-medium">{t("result.review")}</p>
+        )}
+        {d.followUp && (
+          <p className="flex gap-2 rounded-xl bg-accent p-3 text-sm text-accent-foreground">
+            <Lightbulb className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <strong>{t("result.tip")}:</strong> {tr.followUp}
+            </span>
+          </p>
+        )}
+
+        {report.advisory && (
+          <section>
+            <h3 className="mb-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("result.advice")}</h3>
+            {tr.status === "loading" ? (
+              <div className="space-y-2" aria-live="polite">
+                <p className="text-sm text-muted-foreground">{t("result.translating")}</p>
+                <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                <div className="h-3 w-5/6 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-4/6 animate-pulse rounded bg-muted" />
+              </div>
+            ) : (
+              <>
+                {tr.status === "error" && <p className="mb-2 text-xs text-muted-foreground">{t("result.noTranslation")}</p>}
+                <p className="whitespace-pre-line text-[15px] leading-relaxed">{tr.advisory}</p>
+              </>
+            )}
+          </section>
+        )}
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          {onAnother && (
+            <button
+              onClick={onAnother}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            >
+              <RotateCcw className="size-4" /> {t("result.another")}
+            </button>
+          )}
+          <Link
+            href={`/map?focus=${report.id}`}
+            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+          >
+            <MapPin className="size-4" /> {t("result.onMap")}
+          </Link>
+          <button
+            onClick={copyLink}
+            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+          >
+            {copied ? <Check className="size-4 text-primary" /> : <Link2 className="size-4" />}
+            {copied ? t("result.copied") : t("result.share")}
+          </button>
+        </div>
+      </div>
+    </motion.article>
+  );
+}

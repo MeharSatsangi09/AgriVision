@@ -1,0 +1,21 @@
+{
+  "name": "functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test:pipeline": "tsc && node --env-file=.env lib/scripts/testPipeline.js",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "@google/adk": "^2.1.0",
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,23 @@
+node_modules
+.next
+lib/
+!frontend/lib/
+.env
+.env.local
+functions/.env*
+!functions/.env.example
+
+# Project notes written for the AI assistant — not part of the app
+/CLAUDE.md
+/prd.md
+/architecture.md
+/constraints.md
+/phases.md
+/design.md
+/memory.md
+/custom-model-task.md
+/.claude/
+
+# Local tooling
+.vercel
+*.tsbuildinfo

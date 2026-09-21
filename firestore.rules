@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hackathon: public read for the map; writes only via Cloud Functions (admin SDK).
+    match /reports/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Written by the function when the pipeline fails, so the UI can show an error.
+    match /uploadErrors/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

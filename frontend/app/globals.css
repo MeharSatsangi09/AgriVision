@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Design tokens — see design.md. Green agriculture palette, warm paper background. */
+:root {
+  --background: #f6f5ef;
+  --foreground: #1f2a1f;
+  --card: #ffffff;
+  --card-foreground: #1f2a1f;
+  --primary: #2f6b3a;
+  --primary-foreground: #ffffff;
+  --muted: #ebeae0;
+  --muted-foreground: #5f6b5f;
+  --accent: #e6f0e3;
+  --accent-foreground: #1f4d2a;
+  --border: #dcdacb;
+  --ring: #2f6b3a;
+  --severity-low: #3f9b4f;
+  --severity-medium: #d9922b;
+  --severity-high: #c8402f;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-severity-low: var(--severity-low);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-high: var(--severity-high);
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+}
