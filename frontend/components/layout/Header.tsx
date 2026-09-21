@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Leaf, Languages } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import { useData, groupOutbreaks } from "@/lib/data";
+import { useSeen } from "@/lib/seen";
 import { LANGUAGES, isLangCode } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +16,7 @@ const NAV = [
 export default function Header() {
   const { t, lang, setLang } = useI18n();
   const path = usePathname();
-  const { reports } = useData();
-  const outbreaks = groupOutbreaks(reports).length;
+  const { unseenCount } = useSeen();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
@@ -42,9 +41,9 @@ export default function Header() {
                 )}
               >
                 {t(key)}
-                {href === "/alerts" && outbreaks > 0 && (
+                {href === "/alerts" && unseenCount > 0 && (
                   <span className="grid min-w-5 place-items-center rounded-full bg-severity-high px-1.5 text-xs font-semibold text-white">
-                    {outbreaks}
+                    {unseenCount}
                   </span>
                 )}
               </Link>

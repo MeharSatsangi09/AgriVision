@@ -4,6 +4,8 @@ import { Camera, ChevronRight, ScanSearch, TriangleAlert, Bell } from "lucide-re
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { groupOutbreaks, useData } from "@/lib/data";
+import { useSeen } from "@/lib/seen";
+import { cn } from "@/lib/utils";
 
 export function Hero() {
   const { t } = useI18n();
@@ -19,21 +21,31 @@ export function Hero() {
   );
 }
 
-// Compact "outbreak near you" strip, shown only when at least one outbreak is active.
+// Compact outbreak strip, shown while at least one outbreak is active. Red while there is something this viewer
+// hasn't seen yet; once they have opened the Alerts page it stays as a quiet link (the outbreak is still real).
 export function AlertStrip() {
   const { t } = useI18n();
-  const { reports } = useData();
-  const n = groupOutbreaks(reports).length;
+  const { active, unseenCount } = useSeen();
+  const n = active.length;
   if (!n) return null;
+  const quiet = unseenCount === 0;
   return (
     <Link
       href="/alerts"
-      className="flex items-center gap-3 rounded-xl border border-severity-high/30 bg-severity-high/10 px-4 py-3 text-severity-high transition hover:bg-severity-high/15"
+      className={cn(
+        "flex items-center gap-3 rounded-xl border px-4 py-3 transition",
+        quiet
+          ? "bg-card text-muted-foreground hover:bg-muted"
+          : "border-severity-high/30 bg-severity-high/10 text-severity-high hover:bg-severity-high/15"
+      )}
     >
       <TriangleAlert className="size-5 shrink-0" />
       <span className="font-medium">
         {n} {t("home.outbreaks")}
       </span>
+      {!quiet && (
+        <span className="rounded-full bg-severity-high px-2 py-0.5 text-xs font-semibold text-white">{t("alerts.new")}</span>
+      )}
       <ChevronRight className="ml-auto size-5" />
     </Link>
   );

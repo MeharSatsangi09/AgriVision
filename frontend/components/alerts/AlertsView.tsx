@@ -1,15 +1,29 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { MapPin, ShieldCheck, TriangleAlert } from "lucide-react";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import { groupOutbreaks, useData, type Outbreak } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useSeen } from "@/lib/seen";
 import { timeAgo, titleCase } from "@/lib/format";
 
 export default function AlertsView() {
   const { t } = useI18n();
   const { reports, ready } = useData();
   const outbreaks = groupOutbreaks(reports);
+  const { seen, loaded, markSeen } = useSeen();
+  const [fresh, setFresh] = useState<Set<string>>(new Set()); // outbreaks that were unseen when they appeared here
+  const keys = outbreaks.map((o) => o.key).join("\n");
+
+  // Opening this page counts as seeing every active outbreak (but remember which ones were new, for the pill).
+  useEffect(() => {
+    if (!ready || !loaded || !keys) return;
+    const unseen = keys.split("\n").filter((k) => !seen.has(k));
+    if (!unseen.length) return;
+    setFresh((prev) => new Set([...prev, ...unseen]));
+    markSeen(unseen);
+  }, [ready, loaded, keys, seen, markSeen]);
 
   return (
     <div className="space-y-6">
@@ -35,7 +49,7 @@ export default function AlertsView() {
 
       <ul className="grid gap-4 md:grid-cols-2">
         {outbreaks.map((o) => (
-          <AlertCard key={o.key} outbreak={o} />
+          <AlertCard key={o.key} outbreak={o} isNew={fresh.has(o.key)} />
         ))}
       </ul>
 
@@ -44,7 +58,7 @@ export default function AlertsView() {
   );
 }
 
-function AlertCard({ outbreak: o }: { outbreak: Outbreak }) {
+function AlertCard({ outbreak: o, isNew }: { outbreak: Outbreak; isNew: boolean }) {
   const { t, lang } = useI18n();
   const name = o.latest.diseaseTranslations?.[lang] ?? titleCase(o.disease);
   return (
@@ -52,6 +66,9 @@ function AlertCard({ outbreak: o }: { outbreak: Outbreak }) {
       <div className="flex items-center gap-3 bg-severity-high/10 px-5 py-3 text-severity-high">
         <TriangleAlert className="size-5 shrink-0" />
         <h2 className="text-lg font-semibold">{name}</h2>
+        {isNew && (
+          <span className="rounded-full bg-severity-high px-2 py-0.5 text-xs font-semibold text-white">{t("alerts.new")}</span>
+        )}
       </div>
       <div className="space-y-4 p-5">
         <p className="text-[15px]">{t("alerts.summary", { n: o.reports.length, d: name })}</p>

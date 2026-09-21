@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import jpeg from "jpeg-js";
 import { PNG } from "pngjs";
+import { parseDiagnosis } from "../agents/diagnosisAgent";
 import { LOW_CONFIDENCE_THRESHOLD, agreesWith, classifyImage, cropResize, dirSource, parseLabel, resetClassifierCache } from "../tools/classifierTool";
 
 // Tests the classifier plumbing with a small stand-in model that has the SAME input/output signature as the
@@ -96,6 +97,34 @@ async function main() {
   for (const [cond, gem, want] of pairs)
     if (agreesWith({ condition: cond }, gem) !== want) fail(`agreesWith("${cond}", "${gem}") should be ${want}`);
   ok(`agreesWith: ${pairs.length} classifier/Gemini name pairs (incl. rose-leaf case and "unclear")`);
+
+  // --- agreement through the REAL Gemini-output parsing path (raw model text -> parseDiagnosis -> agreesWith).
+  // Covers messy shapes a model can return: code fences, mixed case, parenthetical Latin names, a "disease" suffix,
+  // a full descriptive sentence in the disease field, broken JSON.
+  const j = (disease: string) => JSON.stringify({ disease, severity: "medium", confidence: 0.9, followUp: "" });
+  const raw: [string, string, boolean][] = [
+    [j("Early blight"), "Early blight", true],
+    [["```json", j("Late blight"), "```"].join(String.fromCharCode(10)), "Late blight", true],
+    [j("Tomato Late Blight (Phytophthora infestans)"), "Late blight", true],
+    [j("Black spot disease"), "Leaf scorch", false], // rose leaf vs classifier's guess
+    [j("Black spot disease"), "Black rot", false],
+    [j("This looks like early blight based on the brown spotting pattern"), "Early blight", true],
+    [j("This looks like early blight based on the brown spotting pattern"), "Late blight", false],
+    [j("This looks like early blight based on the brown spotting pattern"), "Healthy", false],
+    [j("healthy"), "Healthy", true],
+    [j("Healthy"), "Late blight", false],
+    [j("unclear"), "Late blight", false],
+    [j("Spider mite damage"), "Spider mites Two spotted spider mite", true],
+    [j("Leaf curl virus"), "Tomato Yellow Leaf Curl Virus", true],
+    ["not json at all", "Late blight", false], // parse failure -> "unclear" -> no agreement
+    ["", "Early blight", false],
+  ];
+  for (const [text, cond, want] of raw) {
+    const disease = parseDiagnosis(text).disease;
+    if (agreesWith({ condition: cond }, disease) !== want)
+      fail(`parse+agree: model text ${JSON.stringify(text.slice(0, 60))} -> disease "${disease}" vs classifier "${cond}" should be ${want}`);
+  }
+  ok(`agreesWith through parseDiagnosis: ${raw.length} realistic/messy Gemini outputs`);
 
   // --- real loader against a stand-in model
   const dir = path.join(os.tmpdir(), "agrivision-fake-model");

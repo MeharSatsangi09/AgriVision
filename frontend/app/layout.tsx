@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { DataProvider } from "@/lib/data";
+import { SeenProvider } from "@/lib/seen";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -19,9 +20,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="flex min-h-screen flex-col antialiased">
         <I18nProvider>
           <DataProvider>
-            <Header />
-            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-            <Footer />
+            <SeenProvider>
+              <Header />
+              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+              <Footer />
+            </SeenProvider>
           </DataProvider>
         </I18nProvider>
       </body>
