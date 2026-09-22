@@ -2,6 +2,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import type { Diagnosis } from "../agents/diagnosisAgent";
 import type { TrendStore } from "./trendTools";
 import type { ClassifierResult } from "./classifierTool";
+import type { Reconciliation } from "../agents/reconciliationAgent";
 
 const toTrend = (d: FirebaseFirestore.QueryDocumentSnapshot) => {
   const r = d.data();
@@ -23,6 +24,7 @@ export interface ReportInput {
   diagnosis: Diagnosis;
   advisory: string;
   classifier?: ClassifierResult; // our own trained model's answer (side by side with Gemini)
+  reconciliation?: Reconciliation; // Reconciliation Agent's adjudicated answer (Agent 4)
 }
 
 // Plain function: called deterministically by the Cloud Function after the pipeline runs.

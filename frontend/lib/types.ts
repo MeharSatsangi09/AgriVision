@@ -21,6 +21,19 @@ export interface Report {
   followUpTranslations?: Record<string, string>;
   // Our own trained model's answer, shown side by side with Gemini's diagnosis (optional).
   classifier?: ClassifierResult;
+  // Reconciliation Agent's adjudicated answer (Agent 4) — set only when the classifier also ran.
+  reconciliation?: Reconciliation;
+  reconciliationDiagnosisTranslations?: Record<string, string>;
+  reconciliationReasoningTranslations?: Record<string, string>;
+}
+
+export type ReconciliationAction = "confident" | "deferred_to_gemini" | "request_clearer_photo";
+
+export interface Reconciliation {
+  finalDiagnosis: string;
+  reasoning: string;
+  action: ReconciliationAction;
+  agreedWithClassifier: boolean;
 }
 
 export interface ClassifierResult {

@@ -6,6 +6,7 @@ import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
+import ReconciliationHero from "@/components/report/ReconciliationHero";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useData, groupOutbreaks } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
@@ -49,8 +50,17 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="grid gap-6 rounded-2xl border bg-card p-5 shadow-sm md:grid-cols-[260px_1fr] md:p-6"
+      className="space-y-5 rounded-2xl border bg-card p-5 shadow-sm md:p-6"
     >
+      {report.reconciliation && (
+        <ReconciliationHero
+          reconciliation={report.reconciliation}
+          diagnosis={tr.reconciliationDiagnosis}
+          reasoning={tr.reconciliationReasoning}
+        />
+      )}
+
+      <div className="grid gap-6 md:grid-cols-[260px_1fr]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={report.photoUrl} alt="" className="aspect-square w-full max-w-64 rounded-xl object-cover md:max-w-none" />
 
@@ -181,6 +191,7 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
             {copied ? t("result.copied") : t("result.share")}
           </button>
         </div>
+      </div>
       </div>
     </motion.article>
   );

@@ -5,7 +5,7 @@ import { functions } from "@/lib/firebase";
 import { titleCase } from "@/lib/format";
 import type { Report } from "@/lib/types";
 
-type Pair = { advisory: string; disease: string; followUp?: string };
+type Pair = { advisory: string; disease: string; followUp?: string; reconciliationDiagnosis?: string; reconciliationReasoning?: string };
 
 const translateReport = httpsCallable<{ reportId: string; lang: string }, Pair>(functions, "translateReport");
 
@@ -13,8 +13,8 @@ const translateReport = httpsCallable<{ reportId: string; lang: string }, Pair>(
 const cache = new Map<string, Pair>();
 const inflight = new Map<string, Promise<Pair>>();
 
-// Returns the report's advisory + disease name in `lang`. Uses translations already stored on the report,
-// otherwise asks the backend (which caches the result on the report for everyone).
+// Returns the report's advisory + disease name (+ reconciliation, if present) in `lang`. Uses translations already
+// stored on the report, otherwise asks the backend (which caches the result on the report for everyone).
 export function useTranslated(report: Report, lang: string) {
   const key = `${report.id}:${lang}`;
   const stored: Pair | undefined =
@@ -23,6 +23,8 @@ export function useTranslated(report: Report, lang: string) {
           advisory: report.advisoryTranslations[lang],
           disease: report.diseaseTranslations?.[lang] ?? "",
           followUp: report.followUpTranslations?.[lang],
+          reconciliationDiagnosis: report.reconciliationDiagnosisTranslations?.[lang],
+          reconciliationReasoning: report.reconciliationReasoningTranslations?.[lang],
         }
       : undefined;
   const [fetched, setFetched] = useState<{ key: string; v: Pair } | null>(null);
@@ -53,6 +55,8 @@ export function useTranslated(report: Report, lang: string) {
     advisory: english ? report.advisory : t?.advisory || report.advisory,
     disease: english ? titleCase(report.diagnosis.disease) : t?.disease || titleCase(report.diagnosis.disease),
     followUp: english ? report.diagnosis.followUp : t?.followUp || report.diagnosis.followUp,
+    reconciliationDiagnosis: english ? report.reconciliation?.finalDiagnosis : t?.reconciliationDiagnosis || report.reconciliation?.finalDiagnosis,
+    reconciliationReasoning: english ? report.reconciliation?.reasoning : t?.reconciliationReasoning || report.reconciliation?.reasoning,
     status: english || t?.advisory ? ("ok" as const) : failedKey === key ? ("error" as const) : ("loading" as const),
   };
 }

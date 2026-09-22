@@ -5,6 +5,7 @@ import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { runAnalysis, QuotaError } from "./agents/pipeline";
+import { reconcile } from "./agents/reconciliationAgent";
 import { runTrendCheck } from "./agents/trendAgent";
 import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
@@ -39,6 +40,27 @@ export const processUpload = onObjectFinalized(
 
     try {
       const { diagnosis, advisory, classifier } = await runAnalysis(buf, contentType, lat, lng, bucketName);
+
+      // Reconciliation Agent (Agent 4): adjudicates Gemini vs. the classifier. Runs only when both signals
+      // exist; never blocks or fails the report (reconcile() always resolves, with a rule-based fallback).
+      let reconciliation;
+      if (classifier) {
+        try {
+          reconciliation = await reconcile({
+            geminiDisease: diagnosis.disease,
+            geminiSeverity: diagnosis.severity,
+            geminiConfidence: diagnosis.confidence,
+            geminiNeedsReview: diagnosis.needsReview,
+            classifierCondition: classifier.condition || classifier.crop,
+            classifierConfidence: classifier.confidence,
+            classifierLowConfidence: !!classifier.lowConfidence,
+          });
+          console.log("reconciliation:", JSON.stringify(reconciliation));
+        } catch (err) {
+          console.error("reconciliation failed:", err);
+        }
+      }
+
       await writeReport({
         photoUrl: await getDownloadURL(file),
         lat: round2(lat),
@@ -46,6 +68,7 @@ export const processUpload = onObjectFinalized(
         diagnosis,
         advisory,
         ...(classifier ? { classifier } : {}),
+        ...(reconciliation ? { reconciliation } : {}),
       });
     } catch (err) {
       console.error("processUpload failed:", err);
@@ -84,25 +107,34 @@ export const translateReport = onCall({ region: REGION, maxInstances: 3, memory:
   if (!snap.exists) throw new HttpsError("not-found", "report not found");
   const r = snap.data()!;
 
-  const followUpEn: string = r.diagnosis?.followUp ?? "";
-  const cached = {
-    advisory: r.advisoryTranslations?.[lang],
-    disease: r.diseaseTranslations?.[lang],
-    followUp: r.followUpTranslations?.[lang],
+  // Source English text + its Firestore field name, per translatable piece. Reconciliation (Agent 4's
+  // adjudicated answer) is optional, same as followUp — only present when that piece exists on the report.
+  const sources: Record<string, string> = {
+    advisory: String(r.advisory ?? ""),
+    disease: String(r.diagnosis?.disease ?? ""),
+    followUp: String(r.diagnosis?.followUp ?? ""),
+    reconciliationDiagnosis: String(r.reconciliation?.finalDiagnosis ?? ""),
+    reconciliationReasoning: String(r.reconciliation?.reasoning ?? ""),
   };
-  if (cached.advisory && cached.disease && (!followUpEn || cached.followUp)) return cached;
+  const cachedMaps: Record<string, string> = {
+    advisory: "advisoryTranslations", disease: "diseaseTranslations", followUp: "followUpTranslations",
+    reconciliationDiagnosis: "reconciliationDiagnosisTranslations", reconciliationReasoning: "reconciliationReasoningTranslations",
+  };
+  const needed = Object.entries(sources).filter(([, text]) => text);
+  const cached: Record<string, string | undefined> = {};
+  for (const [key, mapName] of Object.entries(cachedMaps)) cached[key] = r[mapName]?.[lang];
+  if (needed.every(([key]) => cached[key])) return cached;
 
-  const texts = [String(r.advisory ?? ""), String(r.diagnosis?.disease ?? ""), followUpEn].filter(Boolean);
   try {
-    const out = await translateTexts(texts, lang);
-    const [advisory, disease] = out;
-    const followUp = followUpEn ? out[2] : undefined;
-    await ref.update({
-      [`advisoryTranslations.${lang}`]: advisory,
-      [`diseaseTranslations.${lang}`]: disease,
-      ...(followUp ? { [`followUpTranslations.${lang}`]: followUp } : {}),
+    const translated = await translateTexts(needed.map(([, text]) => text), lang);
+    const result: Record<string, string> = {};
+    const updates: Record<string, string> = {};
+    needed.forEach(([key], i) => {
+      result[key] = translated[i];
+      updates[`${cachedMaps[key]}.${lang}`] = translated[i];
     });
-    return { advisory, disease, followUp };
+    await ref.update(updates);
+    return result;
   } catch (err) {
     console.error(`translateReport ${lang} failed:`, err);
     throw new HttpsError("unavailable", "translation unavailable");
