@@ -7,6 +7,7 @@ import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
 import ReconciliationHero from "@/components/report/ReconciliationHero";
+import FollowUpBox from "@/components/report/FollowUpBox";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useData, groupOutbreaks } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
@@ -167,6 +168,8 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
             )}
           </section>
         )}
+
+        <FollowUpBox reportId={report.id} />
 
         <div className="flex flex-wrap gap-2 pt-1">
           {onAnother && (

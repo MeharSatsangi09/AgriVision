@@ -6,6 +6,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { runAnalysis, QuotaError } from "./agents/pipeline";
 import { reconcile } from "./agents/reconciliationAgent";
+import { askFollowUp } from "./agents/followUpAgent";
 import { runTrendCheck } from "./agents/trendAgent";
 import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
@@ -138,5 +139,50 @@ export const translateReport = onCall({ region: REGION, maxInstances: 3, memory:
   } catch (err) {
     console.error(`translateReport ${lang} failed:`, err);
     throw new HttpsError("unavailable", "translation unavailable");
+  }
+});
+
+// Agent 5 — a farmer's grounded follow-up question about their specific report. Unlike translateReport
+// (which only ever translates text WE already stored), this is the first callable where free-text farmer
+// input reaches an LLM. Kept low-risk: the agent has no tools (no side effects it could be tricked into),
+// its instruction keeps it on-topic, the answer is shown only to the same person who asked it, nothing is
+// written back to the report, and maxInstances/length caps bound cost/abuse.
+export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 60 }, async (req) => {
+  const { reportId, question, lang } = (req.data ?? {}) as { reportId?: unknown; question?: unknown; lang?: unknown };
+  if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) {
+    throw new HttpsError("invalid-argument", "a valid reportId is required");
+  }
+  const q = typeof question === "string" ? question.trim() : "";
+  if (!q || q.length > 300) throw new HttpsError("invalid-argument", "question must be 1-300 characters");
+
+  const ref = getFirestore().collection("reports").doc(reportId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "report not found");
+  const r = snap.data()!;
+
+  const reconciliationSummary = r.reconciliation
+    ? `Our own trained model was also checked against Gemini's diagnosis: ${r.reconciliation.reasoning}`
+    : "";
+
+  const answerEn = await askFollowUp(
+    {
+      disease: String(r.diagnosis?.disease ?? "unclear"),
+      severity: String(r.diagnosis?.severity ?? "low"),
+      confidence: Number(r.diagnosis?.confidence ?? 0),
+      advisory: String(r.advisory ?? ""),
+      location: `lat ${r.lat}, lng ${r.lng}`,
+      reconciliationSummary,
+    },
+    q
+  );
+
+  const targetLang = isLang(lang) ? lang : undefined;
+  if (!targetLang) return { answer: answerEn, lang: "en" };
+  try {
+    const [translated] = await translateTexts([answerEn], targetLang);
+    return { answer: translated, lang: targetLang };
+  } catch (err) {
+    console.error(`askFollowUp translate ${targetLang} failed:`, err);
+    return { answer: answerEn, lang: "en", translationFailed: true };
   }
 });
