@@ -30,6 +30,18 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
   const cls = report.classifier;
   const lowConfidence = !!cls && (cls.lowConfidence ?? cls.confidence < 0.8);
   const uncertain = !!cls && (lowConfidence || cls.agreesWithGemini === false);
+  // refinement.md #6: once the Reconciliation Agent has adjudicated, this card's own guidance must not make a
+  // separate, potentially-contradictory trust claim ("treat the AI diagnosis above as main result" was wrong
+  // when Reconciliation actually sided with the classifier). Defer to Reconciliation's own agreedWithClassifier
+  // verdict instead of the fixed lowConfidence/differs copy. Styling (amber border/icon) and the no-reconciliation
+  // wording are unchanged.
+  const uncertainMessageKey = report.reconciliation
+    ? report.reconciliation.agreedWithClassifier
+      ? "result.model.reconMatch"
+      : "result.model.reconDiffer"
+    : lowConfidence
+      ? "result.model.uncertain"
+      : "result.model.differs";
   const outbreak = report.alert ? groupOutbreaks(reports).find((o) => o.key === report.alertReason) : undefined;
 
   // Showing the outbreak notice below means this viewer has seen the outbreak.
@@ -141,7 +153,7 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
             </h3>
             {uncertain ? (
               <>
-                <p className="mt-2 text-sm text-severity-medium">{t(lowConfidence ? "result.model.uncertain" : "result.model.differs")}</p>
+                <p className="mt-2 text-sm text-severity-medium">{t(uncertainMessageKey)}</p>
                 {/* The raw guess stays visible, but clearly secondary. */}
                 <p className="mt-2 text-xs text-muted-foreground">
                   {cls.crop}
