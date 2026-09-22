@@ -113,7 +113,7 @@ export default function MapView() {
           </div>
         </div>
 
-        <ul className="max-h-[55vh] min-h-40 space-y-2 overflow-y-auto pr-1">
+        <ul data-lenis-prevent className="max-h-[55vh] min-h-40 space-y-2 overflow-y-auto pr-1">
           {!filtered.length && (
             <li className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
               {ready ? t("map.none") : "…"}

@@ -124,7 +124,7 @@ export default function OutbreakMap({
   }, [map, selectedId]);
 
   return (
-    <div className={cn("relative overflow-hidden rounded-2xl border bg-muted shadow-sm", className)}>
+    <div data-lenis-prevent className={cn("relative overflow-hidden rounded-2xl border bg-muted shadow-sm", className)}>
       <div ref={el} className="absolute inset-0" />
       {failed && <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted-foreground">Map unavailable</p>}
     </div>

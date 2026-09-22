@@ -6,6 +6,7 @@ import { DataProvider } from "@/lib/data";
 import { SeenProvider } from "@/lib/seen";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import SmoothScroll from "@/components/layout/SmoothScroll";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <I18nProvider>
           <DataProvider>
             <SeenProvider>
+              <SmoothScroll />
               <Header />
               <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
               <Footer />
