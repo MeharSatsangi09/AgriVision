@@ -1,12 +1,22 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { MapPin, ShieldCheck, TriangleAlert } from "lucide-react";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import { groupOutbreaks, useData, type Outbreak } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { timeAgo, titleCase } from "@/lib/format";
+
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+};
 
 export default function AlertsView() {
   const { t } = useI18n();
@@ -47,11 +57,16 @@ export default function AlertsView() {
         </div>
       )}
 
-      <ul className="grid gap-4 md:grid-cols-2">
+      <motion.ul
+        initial="hidden"
+        animate="show"
+        variants={container}
+        className="grid gap-4 md:grid-cols-2"
+      >
         {outbreaks.map((o) => (
           <AlertCard key={o.key} outbreak={o} isNew={fresh.has(o.key)} />
         ))}
-      </ul>
+      </motion.ul>
 
       <p className="text-sm text-muted-foreground">{t("alerts.rule")}</p>
     </div>
@@ -62,7 +77,7 @@ function AlertCard({ outbreak: o, isNew }: { outbreak: Outbreak; isNew: boolean 
   const { t, lang } = useI18n();
   const name = o.latest.diseaseTranslations?.[lang] ?? titleCase(o.disease);
   return (
-    <li className="overflow-hidden rounded-2xl border border-severity-high/30 bg-card shadow-sm">
+    <motion.li variants={item} className="overflow-hidden rounded-2xl border border-severity-high/30 bg-card shadow-sm">
       <div className="flex items-center gap-3 bg-severity-high/10 px-5 py-3 text-severity-high">
         <TriangleAlert className="size-5 shrink-0" />
         <h2 className="text-lg font-semibold">{name}</h2>
@@ -94,6 +109,6 @@ function AlertCard({ outbreak: o, isNew }: { outbreak: Outbreak; isNew: boolean 
           <MapPin className="size-4" /> {t("result.onMap")}
         </Link>
       </div>
-    </li>
+    </motion.li>
   );
 }

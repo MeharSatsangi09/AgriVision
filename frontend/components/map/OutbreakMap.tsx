@@ -22,6 +22,7 @@ export default function OutbreakMap({
   const markers = useRef<google.maps.Marker[]>([]);
   const rings = useRef<google.maps.Circle[]>([]);
   const fitted = useRef(false);
+  const markersDropped = useRef(false);
   const selectRef = useRef(onSelect);
   selectRef.current = onSelect;
 
@@ -48,11 +49,13 @@ export default function OutbreakMap({
     };
   }, []);
 
-  // Markers
+  // Markers. A DROP animation plays once, the first time markers populate the map — not on every
+  // re-selection (the effect re-runs on selectedId changes too, and re-dropping on every click would be noisy).
   useEffect(() => {
     if (!map) return;
+    const dropIn = !markersDropped.current && reports.length > 0;
     markers.current.forEach((m) => m.setMap(null));
-    markers.current = reports.map((r) => {
+    markers.current = reports.map((r, i) => {
       const selected = r.id === selectedId;
       const m = new google.maps.Marker({
         map,
@@ -68,9 +71,16 @@ export default function OutbreakMap({
           strokeWeight: selected ? 3 : 2,
         },
       });
+      if (dropIn) {
+        // Stagger the drops slightly instead of every marker landing in unison; DROP self-clears after ~700ms.
+        const delay = Math.min(i, 12) * 40;
+        setTimeout(() => m.setAnimation(google.maps.Animation.DROP), delay);
+        setTimeout(() => m.setAnimation(null), delay + 700);
+      }
       m.addListener("click", () => selectRef.current(r.id));
       return m;
     });
+    if (dropIn) markersDropped.current = true;
   }, [map, reports, selectedId]);
 
   // Fit the view to the data once, when it first arrives.
