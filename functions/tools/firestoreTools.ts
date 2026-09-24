@@ -4,6 +4,7 @@ import type { TrendStore } from "./trendTools";
 import type { ClassifierResult } from "./classifierTool";
 import type { Reconciliation } from "../agents/reconciliationAgent";
 import type { SatelliteData } from "./earthEngineTool";
+import type { SoilHealth } from "./soilGridsTool";
 
 const toTrend = (d: FirebaseFirestore.QueryDocumentSnapshot) => {
   const r = d.data();
@@ -28,6 +29,7 @@ export interface ReportInput {
   classifier?: ClassifierResult; // our own trained model's answer (side by side with Gemini)
   reconciliation?: Reconciliation; // Reconciliation Agent's adjudicated answer (Agent 4)
   satelliteData?: SatelliteData; // Earth Engine vegetation-index signal for the report's location
+  soilHealth?: SoilHealth; // ISRIC SoilGrids organic carbon + pH for the report's location
 }
 
 // Plain function: called deterministically by the Cloud Function after the pipeline runs.

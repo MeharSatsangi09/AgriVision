@@ -4,6 +4,7 @@ import { advisoryAgent, parseAdvisory } from "./advisoryAgent";
 import { agreesWith, classifyImage, storageSource, type ClassifierResult } from "../tools/classifierTool";
 import { getVegetationIndex, type SatelliteData } from "../tools/earthEngineTool";
 import { getWeatherSummary } from "../tools/weatherTool";
+import { getSoilHealth, type SoilHealth } from "../tools/soilGridsTool";
 
 // Diagnosis -> Advisory, output of the first flows to the second via session state.
 export const pipeline = new SequentialAgent({
@@ -100,6 +101,7 @@ async function runOnce(
 const CLASSIFIER_TIMEOUT_MS = 30_000;
 const EARTH_ENGINE_TIMEOUT_MS = 20_000;
 const WEATHER_TIMEOUT_MS = 8_000; // matches weatherTool.ts's own internal timeout
+const SOILGRIDS_TIMEOUT_MS = 20_000; // matches soilGridsTool.ts's own internal timeout; ISRIC's latency is variable
 
 // Runs our own trained classifier NEXT TO the Gemini pipeline (side by side, never feeding into it).
 // The classifier can never fail or delay the main result: any error or timeout just means no second opinion.
@@ -113,7 +115,9 @@ export async function runAnalysis(
   lat: number,
   lng: number,
   bucketName?: string
-): Promise<Result & { classifier: ClassifierResult | null; satelliteData: SatelliteData | null }> {
+): Promise<
+  Result & { classifier: ClassifierResult | null; satelliteData: SatelliteData | null; soilHealth: SoilHealth | null }
+> {
   const classifier: Promise<ClassifierResult | null> = Promise.race([
     classifyImage(image, storageSource(bucketName)),
     sleep(CLASSIFIER_TIMEOUT_MS).then(() => null),
@@ -128,6 +132,13 @@ export async function runAnalysis(
     console.warn("earth engine failed:", err);
     return null;
   });
+  const soil: Promise<SoilHealth | null> = Promise.race([
+    getSoilHealth(lat, lng),
+    sleep(SOILGRIDS_TIMEOUT_MS).then(() => null),
+  ]).catch((err) => {
+    console.warn("soilgrids failed:", err);
+    return null;
+  });
   const weather = await Promise.race([getWeatherSummary(lat, lng), sleep(WEATHER_TIMEOUT_MS).then(() => "")]).catch(
     (err) => {
       console.warn("weather lookup failed:", err);
@@ -136,13 +147,15 @@ export async function runAnalysis(
   );
   console.log(weather ? `weather: ${weather}` : "weather: no result");
 
-  const [main, cls, sat] = await Promise.allSettled([
+  const [main, cls, sat, soi] = await Promise.allSettled([
     runPipeline(image.toString("base64"), mimeType, lat, lng, weather),
     classifier,
     satellite,
+    soil,
   ]);
   const c = cls.status === "fulfilled" ? cls.value : null;
   const s = sat.status === "fulfilled" ? sat.value : null;
+  const sh = soi.status === "fulfilled" ? soi.value : null;
   if (main.status === "rejected") {
     console.log(c ? `classifier: ${c.label} ${c.confidence} (${c.ms} ms)` : "classifier: no result");
     throw main.reason;
@@ -154,5 +167,6 @@ export async function runAnalysis(
       : "classifier: no result"
   );
   console.log(s ? `earth engine: ndvi=${s.ndvi} date=${s.date}` : "earth engine: no result");
-  return { ...main.value, classifier: c, satelliteData: s };
+  console.log(sh ? `soilgrids: organicCarbon=${sh.organicCarbon} ph=${sh.ph}` : "soilgrids: no result");
+  return { ...main.value, classifier: c, satelliteData: s, soilHealth: sh };
 }

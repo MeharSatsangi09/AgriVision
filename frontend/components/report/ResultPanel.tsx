@@ -34,6 +34,15 @@ function ndviLabelKey(ndvi: number): string {
   return "result.satellite.dense";
 }
 
+// Standard agricultural soil-pH bands.
+function phLabelKey(ph: number): string {
+  if (ph < 5.5) return "result.satellite.phStronglyAcidic";
+  if (ph < 6.5) return "result.satellite.phSlightlyAcidic";
+  if (ph < 7.5) return "result.satellite.phNeutral";
+  if (ph < 8.5) return "result.satellite.phSlightlyAlkaline";
+  return "result.satellite.phStronglyAlkaline";
+}
+
 export default function ResultPanel({ report, onAnother }: { report: Report; onAnother?: () => void }) {
   const { t, lang } = useI18n();
   const { reports } = useData();
@@ -188,17 +197,43 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
           </motion.section>
         )}
 
-        {report.satelliteData && (
+        {(report.satelliteData || report.soilHealth) && (
           <motion.section variants={item} className="rounded-xl border bg-background p-3.5">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <Satellite className="size-4 text-primary" /> {t("result.satellite.title")}
             </h3>
-            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-lg font-medium">
-              {report.satelliteData.ndvi.toFixed(2)}
-              <span className="text-sm font-normal text-muted-foreground">{t("result.satellite.ndvi")}</span>
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">{t(ndviLabelKey(report.satelliteData.ndvi))}</p>
-            <p className="mt-2 text-xs text-muted-foreground">{t("result.satellite.asOf", { date: report.satelliteData.date })}</p>
+
+            {report.satelliteData && (
+              <div className="mt-2.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("result.satellite.vegetationLabel")}
+                </p>
+                <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-lg font-medium">
+                  {report.satelliteData.ndvi.toFixed(2)}
+                  <span className="text-sm font-normal text-muted-foreground">{t("result.satellite.ndvi")}</span>
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{t(ndviLabelKey(report.satelliteData.ndvi))}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("result.satellite.asOf", { date: report.satelliteData.date })}</p>
+              </div>
+            )}
+
+            {report.soilHealth && (
+              <div className={report.satelliteData ? "mt-3.5 border-t pt-3" : "mt-2.5"}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("result.satellite.soilLabel")}</p>
+                <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                  <p className="flex items-baseline gap-x-1.5 text-lg font-medium">
+                    {report.soilHealth.ph.toFixed(1)}
+                    <span className="text-sm font-normal text-muted-foreground">{t("result.satellite.ph")}</span>
+                  </p>
+                  <p className="flex items-baseline gap-x-1.5 text-lg font-medium">
+                    {report.soilHealth.organicCarbon.toFixed(1)}
+                    <span className="text-sm font-normal text-muted-foreground">{t("result.satellite.organicCarbon")}</span>
+                  </p>
+                </div>
+                <p className="mt-0.5 text-sm text-muted-foreground">{t(phLabelKey(report.soilHealth.ph))}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("result.satellite.soilSource", { source: report.soilHealth.source })}</p>
+              </div>
+            )}
           </motion.section>
         )}
 

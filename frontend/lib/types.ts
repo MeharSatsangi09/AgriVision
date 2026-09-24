@@ -30,11 +30,19 @@ export interface Report {
   // Earth Engine vegetation-index signal for the report's location (optional — omitted if the lookup
   // failed or timed out; never blocks the report).
   satelliteData?: SatelliteData;
+  // ISRIC SoilGrids organic carbon + pH for the report's location (optional, same never-blocks pattern).
+  soilHealth?: SoilHealth;
 }
 
 export interface SatelliteData {
   ndvi: number; // -1..1
   date: string; // date of the underlying satellite composite, not the upload date
+  source: string;
+}
+
+export interface SoilHealth {
+  organicCarbon: number; // g/kg, 0-5cm depth
+  ph: number; // pH in water, 0-5cm depth
   source: string;
 }
 
