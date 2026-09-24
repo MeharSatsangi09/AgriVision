@@ -17,8 +17,9 @@ export const advisoryAgent = new LlmAgent({
 Diagnosis (JSON): {diagnosis}
 Location: {location}
 Today's date: {today}
+Weather forecast for this location (next ~24h, may be empty if unavailable): {weather}
 Reply with JSON only: {"advisory": string, "regenerativeTip": string}.
-- "advisory": a short, plain-language advisory (under 120 words): immediate action, treatment, prevention. Consider the region and season. If confidence is below 0.6, say the result is uncertain and recommend an expert check. No markdown.
+- "advisory": a short, plain-language advisory (under 120 words): immediate action, treatment, prevention. Consider the region and season. If the weather forecast says rain is expected soon, factor that into WHEN to act — e.g. don't recommend spraying a fungicide/pesticide right before expected rain (it washes off wasted), suggest spraying after the rain passes instead, unless the situation is urgent enough that immediate action still matters more than the wasted spray. If no weather forecast is given, give timing guidance without mentioning weather. If confidence is below 0.6, say the result is uncertain and recommend an expert check. No markdown.
 - "regenerativeTip": ONE specific low-cost, no-chemical regenerative practice grounded in this exact disease (e.g. a crop rotation that breaks this pathogen's cycle, a neem-based or other biological alternative to a chemical spray, a companion-planting or cultural practice that suppresses this specific disease). Under 40 words, plain language, no markdown. If the diagnosis is "Healthy" or "Unclear", use "".`,
   outputKey: "advisory",
   generateContentConfig: { responseMimeType: "application/json" },

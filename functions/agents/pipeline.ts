@@ -3,6 +3,7 @@ import { diagnosisAgent, parseDiagnosis, type Diagnosis } from "./diagnosisAgent
 import { advisoryAgent, parseAdvisory } from "./advisoryAgent";
 import { agreesWith, classifyImage, storageSource, type ClassifierResult } from "../tools/classifierTool";
 import { getVegetationIndex, type SatelliteData } from "../tools/earthEngineTool";
+import { getWeatherSummary } from "../tools/weatherTool";
 
 // Diagnosis -> Advisory, output of the first flows to the second via session state.
 export const pipeline = new SequentialAgent({
@@ -23,13 +24,19 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Gemini calls occasionally hang or 5xx; cancel each attempt after a timeout and retry once.
 // A daily-quota 429 is not retried (pointless); a per-minute 429 waits a few seconds first.
-export async function runPipeline(imageBase64: string, mimeType: string, lat: number, lng: number): Promise<Result> {
+export async function runPipeline(
+  imageBase64: string,
+  mimeType: string,
+  lat: number,
+  lng: number,
+  weather = ""
+): Promise<Result> {
   let lastErr: unknown;
   for (let i = 1; i <= ATTEMPTS; i++) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
     try {
-      return await runOnce(imageBase64, mimeType, lat, lng, ctl.signal);
+      return await runOnce(imageBase64, mimeType, lat, lng, weather, ctl.signal);
     } catch (e) {
       lastErr = ctl.signal.aborted ? new Error(`pipeline attempt ${i} timed out`) : e;
       console.error(`runPipeline attempt ${i} failed:`, lastErr);
@@ -51,6 +58,7 @@ async function runOnce(
   mimeType: string,
   lat: number,
   lng: number,
+  weather: string,
   abortSignal: AbortSignal
 ): Promise<Result> {
   const runner = new InMemoryRunner({ agent: pipeline, appName: APP });
@@ -63,6 +71,7 @@ async function runOnce(
     state: {
       location: `lat ${lat}, lng ${lng}`,
       today: new Date().toISOString().slice(0, 10),
+      weather,
     },
   });
 
@@ -90,11 +99,14 @@ async function runOnce(
 
 const CLASSIFIER_TIMEOUT_MS = 30_000;
 const EARTH_ENGINE_TIMEOUT_MS = 20_000;
+const WEATHER_TIMEOUT_MS = 8_000; // matches weatherTool.ts's own internal timeout
 
 // Runs our own trained classifier NEXT TO the Gemini pipeline (side by side, never feeding into it).
 // The classifier can never fail or delay the main result: any error or timeout just means no second opinion.
 // It is awaited even when Gemini fails, so its outcome is always logged (and the model load is verifiable).
-// The Earth Engine vegetation-index lookup follows the exact same never-blocks contract.
+// The Earth Engine vegetation-index lookup follows the exact same never-blocks contract. The weather
+// lookup is the one exception that IS awaited before the Gemini pipeline starts (capped at 8s) — the
+// Advisory Agent needs it in its initial session state, which must be set before diagnosisAgent runs.
 export async function runAnalysis(
   image: Buffer,
   mimeType: string,
@@ -116,8 +128,16 @@ export async function runAnalysis(
     console.warn("earth engine failed:", err);
     return null;
   });
+  const weather = await Promise.race([getWeatherSummary(lat, lng), sleep(WEATHER_TIMEOUT_MS).then(() => "")]).catch(
+    (err) => {
+      console.warn("weather lookup failed:", err);
+      return "";
+    }
+  );
+  console.log(weather ? `weather: ${weather}` : "weather: no result");
+
   const [main, cls, sat] = await Promise.allSettled([
-    runPipeline(image.toString("base64"), mimeType, lat, lng),
+    runPipeline(image.toString("base64"), mimeType, lat, lng, weather),
     classifier,
     satellite,
   ]);
