@@ -11,6 +11,7 @@ import { runTrendCheck } from "./agents/trendAgent";
 import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
 import { inIndia } from "./tools/india";
+import { transcribeAudio } from "./tools/speechTool";
 
 initializeApp();
 
@@ -187,5 +188,25 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
   } catch (err) {
     console.error(`askFollowUp translate ${targetLang} failed:`, err);
     return { answer: answerEn, lang: "en", translationFailed: true };
+  }
+});
+
+// Cloud Speech-to-Text for the Follow-up box's mic button (frontend/components/report/FollowUpBox.tsx).
+// A short WEBM/Opus recording of the farmer's spoken question comes in as base64; the transcript fills
+// the text input for the farmer to review/edit before submitting through the normal askFollowUpQuestion
+// flow above -- this callable never itself answers a question, it only transcribes.
+export const transcribeSpeech = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 30 }, async (req) => {
+  const { audio, langCode } = (req.data ?? {}) as { audio?: unknown; langCode?: unknown };
+  if (typeof audio !== "string" || !audio) throw new HttpsError("invalid-argument", "audio (base64) is required");
+  // ~750 KB decoded is generous for a few seconds of a short spoken question; guards cost/abuse.
+  if (audio.length > 1_000_000) throw new HttpsError("invalid-argument", "audio too large");
+  const lang = typeof langCode === "string" && /^[a-z]{2}-[A-Z]{2}$/.test(langCode) ? langCode : "en-IN";
+
+  try {
+    const { transcript, confidence } = await transcribeAudio(audio, lang);
+    return { transcript, confidence };
+  } catch (err) {
+    console.error("transcribeSpeech failed:", err);
+    throw new HttpsError("unavailable", "transcription unavailable");
   }
 });
