@@ -45,7 +45,13 @@
     border-color: var(--border);
   }
   body {
-    background: var(--background);
+    /* Soft green wash instead of flat paper white: light blobs of leaf-green over a tinted base. */
+    background:
+      radial-gradient(60rem 36rem at 8% -6%, rgba(120, 180, 110, 0.32), transparent 65%),
+      radial-gradient(52rem 34rem at 100% 28%, rgba(150, 205, 130, 0.28), transparent 65%),
+      radial-gradient(56rem 36rem at 0% 78%, rgba(105, 165, 100, 0.24), transparent 65%),
+      linear-gradient(180deg, #eef4e6 0%, #e6efdc 55%, #dbe9d1 100%);
+    background-attachment: fixed;
     color: var(--foreground);
     font-family: var(--font-sans);
   }
