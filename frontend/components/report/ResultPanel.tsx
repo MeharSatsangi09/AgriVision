@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, TriangleAlert } from "lucide-react";
+import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, Sprout, TriangleAlert } from "lucide-react";
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
@@ -162,6 +162,19 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
                 {tr.status === "error" && <p className="mb-2 text-xs text-muted-foreground">{t("result.noTranslation")}</p>}
                 <p className="whitespace-pre-line text-[15px] leading-relaxed">{tr.advisory}</p>
               </>
+            )}
+          </motion.section>
+        )}
+
+        {report.regenerativeTip && (
+          <motion.section variants={item} className="rounded-xl border border-primary/25 bg-primary/5 p-3.5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <Sprout className="size-4" /> {t("result.regenerativeTip")}
+            </h3>
+            {tr.status === "loading" ? (
+              <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-muted" />
+            ) : (
+              <p className="mt-1.5 text-sm leading-relaxed">{tr.regenerativeTip}</p>
             )}
           </motion.section>
         )}

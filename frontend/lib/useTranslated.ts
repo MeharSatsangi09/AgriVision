@@ -5,7 +5,14 @@ import { functions } from "@/lib/firebase";
 import { titleCase } from "@/lib/format";
 import type { Report } from "@/lib/types";
 
-type Pair = { advisory: string; disease: string; followUp?: string; reconciliationDiagnosis?: string; reconciliationReasoning?: string };
+type Pair = {
+  advisory: string;
+  disease: string;
+  followUp?: string;
+  regenerativeTip?: string;
+  reconciliationDiagnosis?: string;
+  reconciliationReasoning?: string;
+};
 
 const translateReport = httpsCallable<{ reportId: string; lang: string }, Pair>(functions, "translateReport");
 
@@ -23,6 +30,7 @@ export function useTranslated(report: Report, lang: string) {
           advisory: report.advisoryTranslations[lang],
           disease: report.diseaseTranslations?.[lang] ?? "",
           followUp: report.followUpTranslations?.[lang],
+          regenerativeTip: report.regenerativeTipTranslations?.[lang],
           reconciliationDiagnosis: report.reconciliationDiagnosisTranslations?.[lang],
           reconciliationReasoning: report.reconciliationReasoningTranslations?.[lang],
         }
@@ -55,6 +63,7 @@ export function useTranslated(report: Report, lang: string) {
     advisory: english ? report.advisory : t?.advisory || report.advisory,
     disease: english ? titleCase(report.diagnosis.disease) : t?.disease || titleCase(report.diagnosis.disease),
     followUp: english ? report.diagnosis.followUp : t?.followUp || report.diagnosis.followUp,
+    regenerativeTip: english ? report.regenerativeTip : t?.regenerativeTip || report.regenerativeTip,
     reconciliationDiagnosis: english ? report.reconciliation?.finalDiagnosis : t?.reconciliationDiagnosis || report.reconciliation?.finalDiagnosis,
     reconciliationReasoning: english ? report.reconciliation?.reasoning : t?.reconciliationReasoning || report.reconciliation?.reasoning,
     status: english || t?.advisory ? ("ok" as const) : failedKey === key ? ("error" as const) : ("loading" as const),

@@ -14,11 +14,13 @@ export interface Report {
     followUp?: string;
   };
   advisory: string;
+  regenerativeTip?: string; // one low-cost/no-chemical practice tied to the diagnosis, from the Advisory Agent
   alert?: boolean;
   alertReason?: string;
   advisoryTranslations?: Record<string, string>;
   diseaseTranslations?: Record<string, string>;
   followUpTranslations?: Record<string, string>;
+  regenerativeTipTranslations?: Record<string, string>;
   // Our own trained model's answer, shown side by side with Gemini's diagnosis (optional).
   classifier?: ClassifierResult;
   // Reconciliation Agent's adjudicated answer (Agent 4) — set only when the classifier also ran.

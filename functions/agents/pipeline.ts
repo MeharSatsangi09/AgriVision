@@ -1,6 +1,6 @@
 import { SequentialAgent, InMemoryRunner } from "@google/adk";
 import { diagnosisAgent, parseDiagnosis, type Diagnosis } from "./diagnosisAgent";
-import { advisoryAgent } from "./advisoryAgent";
+import { advisoryAgent, parseAdvisory } from "./advisoryAgent";
 import { agreesWith, classifyImage, storageSource, type ClassifierResult } from "../tools/classifierTool";
 
 // Diagnosis -> Advisory, output of the first flows to the second via session state.
@@ -11,7 +11,7 @@ export const pipeline = new SequentialAgent({
 
 const APP = "crop-advisor";
 
-type Result = { diagnosis: Diagnosis; advisory: string };
+type Result = { diagnosis: Diagnosis; advisory: string; regenerativeTip?: string };
 
 const ATTEMPT_TIMEOUT_MS = 55_000;
 const ATTEMPTS = 2;
@@ -79,9 +79,11 @@ async function runOnce(
 
   const session = await runner.sessionService.getSession({ appName: APP, userId, sessionId });
   const state = session?.state ?? {};
+  const { advisory, regenerativeTip } = parseAdvisory(state["advisory"]);
   return {
     diagnosis: parseDiagnosis(state["diagnosis"]),
-    advisory: String(state["advisory"] ?? "").trim(),
+    advisory,
+    ...(regenerativeTip ? { regenerativeTip } : {}),
   };
 }
 

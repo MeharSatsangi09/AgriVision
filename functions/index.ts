@@ -40,7 +40,7 @@ export const processUpload = onObjectFinalized(
     const [buf] = await file.download();
 
     try {
-      const { diagnosis, advisory, classifier } = await runAnalysis(buf, contentType, lat, lng, bucketName);
+      const { diagnosis, advisory, regenerativeTip, classifier } = await runAnalysis(buf, contentType, lat, lng, bucketName);
 
       // Reconciliation Agent (Agent 4): adjudicates Gemini vs. the classifier. Runs only when both signals
       // exist; never blocks or fails the report (reconcile() always resolves, with a rule-based fallback).
@@ -68,6 +68,7 @@ export const processUpload = onObjectFinalized(
         lng: round2(lng),
         diagnosis,
         advisory,
+        ...(regenerativeTip ? { regenerativeTip } : {}),
         ...(classifier ? { classifier } : {}),
         ...(reconciliation ? { reconciliation } : {}),
       });
@@ -114,11 +115,13 @@ export const translateReport = onCall({ region: REGION, maxInstances: 3, memory:
     advisory: String(r.advisory ?? ""),
     disease: String(r.diagnosis?.disease ?? ""),
     followUp: String(r.diagnosis?.followUp ?? ""),
+    regenerativeTip: String(r.regenerativeTip ?? ""),
     reconciliationDiagnosis: String(r.reconciliation?.finalDiagnosis ?? ""),
     reconciliationReasoning: String(r.reconciliation?.reasoning ?? ""),
   };
   const cachedMaps: Record<string, string> = {
     advisory: "advisoryTranslations", disease: "diseaseTranslations", followUp: "followUpTranslations",
+    regenerativeTip: "regenerativeTipTranslations",
     reconciliationDiagnosis: "reconciliationDiagnosisTranslations", reconciliationReasoning: "reconciliationReasoningTranslations",
   };
   const needed = Object.entries(sources).filter(([, text]) => text);

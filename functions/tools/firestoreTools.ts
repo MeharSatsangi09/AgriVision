@@ -23,6 +23,7 @@ export interface ReportInput {
   lng: number;
   diagnosis: Diagnosis;
   advisory: string;
+  regenerativeTip?: string; // one low-cost/no-chemical practice tied to the diagnosis, from the Advisory Agent
   classifier?: ClassifierResult; // our own trained model's answer (side by side with Gemini)
   reconciliation?: Reconciliation; // Reconciliation Agent's adjudicated answer (Agent 4)
 }
