@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, isDemoMode } from "@/lib/firebase";
 import type { Report, UploadFailure } from "@/lib/types";
 
 interface Data {
@@ -19,6 +19,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setReady(true);
+      return;
+    }
     const u1 = onSnapshot(
       collection(db, "reports"),
       (snap) => {

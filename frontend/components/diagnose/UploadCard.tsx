@@ -43,7 +43,7 @@ export default function UploadCard({
   const ready = !!file && !!location;
 
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
+    <section id="upload" className="scroll-mt-24 rounded-2xl border bg-card p-5 shadow-sm md:p-6">
       <h2 className="mb-4 text-lg font-semibold">{t("upload.title")}</h2>
 
       <div className="grid gap-6 lg:grid-cols-2">

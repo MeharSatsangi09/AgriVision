@@ -8,9 +8,10 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { LANGUAGES, isLangCode } from "@/lib/languages";
 import { cn } from "@/lib/utils";
+import { AnimatedBackground } from "@/components/core/animated-background";
 
 const NAV = [
-  { href: "/", key: "nav.diagnose" },
+  { href: "/diagnose", key: "nav.diagnose" },
   { href: "/map", key: "nav.map" },
   { href: "/alerts", key: "nav.alerts" },
 ] as const;
@@ -36,19 +37,13 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
+      data-id={href}
       className={cn(
         "relative flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition",
         active ? "text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
         className
       )}
     >
-      {active && (
-        <motion.span
-          layoutId={layoutId}
-          className="absolute inset-0 rounded-full bg-accent"
-          transition={{ type: "spring", stiffness: 400, damping: 32 }}
-        />
-      )}
       <span className="relative">{label}</span>
       {!!badge && (
         <span className="relative grid min-w-5 place-items-center rounded-full bg-severity-high px-1.5 text-xs font-semibold text-white">
@@ -78,9 +73,15 @@ export default function Header() {
           <span className="text-lg">AgriVision</span>
         </Link>
 
-        <nav className="hidden gap-1 sm:flex">
+        <AnimatedBackground
+          key={`desktop-${path}`}
+          defaultValue={path === "/" ? "/" : NAV.find((item) => path.startsWith(item.href))?.href}
+          enableHover
+          className="hidden gap-1 rounded-full bg-muted/50 p-1 sm:flex"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+        >
           {NAV.map(({ href, key }) => {
-            const active = href === "/" ? path === "/" : path.startsWith(href);
+            const active = path.startsWith(href);
             return (
               <NavLink
                 key={href}
@@ -92,7 +93,7 @@ export default function Header() {
               />
             );
           })}
-        </nav>
+        </AnimatedBackground>
 
         <div className="ml-auto flex items-center gap-2">
           <label className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
@@ -148,9 +149,15 @@ export default function Header() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden border-t sm:hidden"
           >
-            <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+            <AnimatedBackground
+              key={`mobile-${path}`}
+              defaultValue={path === "/" ? "/" : NAV.find((item) => path.startsWith(item.href))?.href}
+              enableHover
+              className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+            >
               {NAV.map(({ href, key }) => {
-                const active = href === "/" ? path === "/" : path.startsWith(href);
+                const active = path.startsWith(href);
                 return (
                   <NavLink
                     key={href}
@@ -178,7 +185,7 @@ export default function Header() {
                   ))}
                 </select>
               </label>
-            </nav>
+            </AnimatedBackground>
           </motion.div>
         )}
       </AnimatePresence>
