@@ -1,12 +1,14 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
-import { Camera, ChevronRight, ScanSearch, TriangleAlert, Bell } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Activity, ArrowUpRight, Bell, Camera, Check, ChevronRight, Leaf, MapPin, ScanSearch, ShieldCheck, TriangleAlert } from "lucide-react";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { groupOutbreaks, useData } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
 import { cn } from "@/lib/utils";
+import { AnimatedBackground } from "@/components/core/animated-background";
 
 // Scroll-reveal container/item pair shared by the sections below (same pattern as ResultPanel's stagger).
 const container = {
@@ -20,18 +22,125 @@ const item = {
 
 export function Hero() {
   const { t } = useI18n();
+  const [signal, setSignal] = useState<"leaf" | "field" | "advice">("leaf");
+  const signals = [
+    { id: "leaf" as const, label: "Leaf health", icon: Leaf },
+    { id: "field" as const, label: "Field signals", icon: Activity },
+    { id: "advice" as const, label: "Local advice", icon: ShieldCheck },
+  ];
+
+  const signalContent = {
+    leaf: {
+      eyebrow: "VISUAL CHECK",
+      title: "A clearer read on every leaf",
+      detail: "One close-up photo becomes a practical next step for the field.",
+      value: "92%",
+      label: "signal confidence",
+      color: "bg-primary",
+    },
+    field: {
+      eyebrow: "FIELD PULSE",
+      title: "See patterns before they spread",
+      detail: "Nearby reports turn isolated symptoms into an early warning.",
+      value: "24 km",
+      label: "signal radius",
+      color: "bg-severity-high",
+    },
+    advice: {
+      eyebrow: "FARMER READY",
+      title: "Advice that meets the moment",
+      detail: "Get a simple explanation and treatment guidance in your language.",
+      value: "12",
+      label: "supported languages",
+      color: "bg-severity-medium",
+    },
+  }[signal];
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-3xl bg-primary px-6 py-12 text-primary-foreground md:px-12 md:py-16"
+      className="relative overflow-hidden rounded-[2rem] bg-[#173d24] px-6 py-8 text-white shadow-[0_24px_70px_-30px_rgba(23,61,36,0.8)] md:px-10 md:py-10"
     >
-      <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 size-80 rounded-full bg-white/10 blur-2xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-32 left-1/3 size-96 rounded-full bg-black/10 blur-3xl" />
-      <div className="relative max-w-2xl">
-        <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-5xl">{t("hero.title")}</h1>
-        <p className="mt-4 text-base text-primary-foreground/85 md:text-lg">{t("hero.subtitle")}</p>
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:42px_42px]" />
+      <div aria-hidden className="pointer-events-none absolute -right-24 -top-28 size-96 rounded-full border border-white/10" />
+      <div aria-hidden className="pointer-events-none absolute -right-8 -top-12 size-64 rounded-full border border-white/10" />
+
+      <div className="relative grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <div className="max-w-2xl">
+          <div className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#b8d8b7]">
+            <span className="grid size-8 place-items-center rounded-full bg-white/10"><Leaf className="size-4" /></span>
+            Crop intelligence for the field
+          </div>
+          <h1 className="max-w-xl text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">{t("hero.title")}</h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-white/70 md:text-lg">{t("hero.subtitle")}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <a href="#upload" className="inline-flex items-center gap-2 rounded-full bg-[#e5f0df] px-5 py-3 text-sm font-semibold text-[#173d24] transition hover:bg-white">
+              {t("upload.submit")} <ArrowUpRight className="size-4" />
+            </a>
+            <Link href="/map" className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              Explore field signals <MapPin className="size-4" />
+            </Link>
+          </div>
+          <div className="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/60">
+            <span className="flex items-center gap-2"><Check className="size-4 text-[#b8d8b7]" /> Photo-first diagnosis</span>
+            <span className="flex items-center gap-2"><Check className="size-4 text-[#b8d8b7]" /> Localized advice</span>
+          </div>
+        </div>
+
+        <div className="relative rounded-[1.5rem] border border-white/15 bg-[#edf3e7] p-3 text-[#173d24] shadow-2xl shadow-black/20 sm:p-4">
+          <div className="flex items-center justify-between px-2 pb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#607461]">
+            <span>AgriVision / live view</span>
+            <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#4d9d56]" /> Ready</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#dce8d8] p-1">
+            {signals.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSignal(id)}
+                className={cn("flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition", signal === id ? "bg-white text-[#173d24] shadow-sm" : "text-[#607461] hover:text-[#173d24]")}
+              >
+                <Icon className="size-3.5" /> <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={signal}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+              className="mt-3 rounded-xl bg-white p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#718172]">{signalContent.eyebrow}</p>
+                  <h2 className="mt-3 max-w-xs text-2xl font-semibold leading-tight">{signalContent.title}</h2>
+                  <p className="mt-2 max-w-sm text-sm leading-6 text-[#68776a]">{signalContent.detail}</p>
+                </div>
+                <div className={cn("grid size-12 shrink-0 place-items-center rounded-2xl text-white", signalContent.color)}>
+                  {signal === "leaf" ? <Leaf className="size-5" /> : signal === "field" ? <Activity className="size-5" /> : <ShieldCheck className="size-5" />}
+                </div>
+              </div>
+              <div className="mt-7 grid grid-cols-[auto_1fr] items-end gap-4 border-t border-[#e2e9df] pt-4">
+                <div>
+                  <div className="text-3xl font-semibold tracking-tight">{signalContent.value}</div>
+                  <div className="mt-1 text-xs text-[#718172]">{signalContent.label}</div>
+                </div>
+                <div className="flex h-10 items-end gap-1.5 justify-self-end" aria-hidden>
+                  {[22, 34, 28, 48, 38, 57, 45, 68, 54, 76, 62, 82].map((height, index) => (
+                    <motion.span key={index} initial={{ height: 0 }} animate={{ height: `${height}%` }} transition={{ delay: index * 0.025, duration: 0.35 }} className="w-1.5 rounded-full bg-[#9cc39a]" />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          <div className="flex items-center gap-2 px-2 pt-3 text-xs text-[#607461]"><ScanSearch className="size-3.5" /> Designed around a single clear field signal</div>
+        </div>
       </div>
     </motion.section>
   );
@@ -78,22 +187,29 @@ export function Stats() {
     { label: t("home.outbreaks"), value: outbreaks, tone: outbreaks ? "text-severity-high" : "text-primary" },
   ];
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.4 }}
-      variants={container}
+    <AnimatedBackground
+      defaultValue={tiles[0].label}
+      enableHover
       className="grid grid-cols-2 gap-4"
+      transition={{ type: "spring", bounce: 0.2, duration: 0.45 }}
     >
       {tiles.map((s) => (
-        <motion.div key={s.label} variants={item} className="rounded-2xl border bg-card p-5 shadow-sm">
+        <motion.div
+          key={s.label}
+          data-id={s.label}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.4 }}
+          variants={item}
+          className="rounded-2xl border bg-transparent p-5 shadow-sm"
+        >
           <div className={`flex items-baseline text-4xl font-bold ${s.tone}`}>
             <SlidingNumber number={s.value} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
         </motion.div>
       ))}
-    </motion.div>
+    </AnimatedBackground>
   );
 }
 
@@ -107,15 +223,22 @@ export function HowItWorks() {
   return (
     <section>
       <h2 className="mb-4 text-xl font-semibold">{t("home.how")}</h2>
-      <motion.ol
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={container}
+      <AnimatedBackground
+        defaultValue="0"
+        enableHover
         className="grid gap-4 md:grid-cols-3"
+        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
       >
         {steps.map(({ icon: Icon, title, body }, i) => (
-          <motion.li key={title} variants={item} className="rounded-2xl border bg-card p-5 shadow-sm">
+          <motion.div
+            key={title}
+            data-id={String(i)}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={item}
+            className="rounded-2xl border bg-transparent p-5 shadow-sm"
+          >
             <div className="mb-3 flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                 <Icon className="size-5" />
@@ -124,9 +247,9 @@ export function HowItWorks() {
             </div>
             <h3 className="font-semibold">{title}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-          </motion.li>
+          </motion.div>
         ))}
-      </motion.ol>
+      </AnimatedBackground>
     </section>
   );
 }

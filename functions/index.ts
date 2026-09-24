@@ -148,6 +148,31 @@ export const translateReport = onCall({ region: REGION, maxInstances: 3, memory:
   }
 });
 
+// Translate the fixed frontend UI dictionary through the same server-side translation service.
+// The payload is bounded because this callable is intentionally usable without user authentication.
+export const translateUi = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
+  const { lang, entries } = (req.data ?? {}) as { lang?: unknown; entries?: unknown };
+  if (!isLang(lang) || !entries || typeof entries !== "object" || Array.isArray(entries)) {
+    throw new HttpsError("invalid-argument", "lang and UI entries are required");
+  }
+
+  const source = entries as Record<string, unknown>;
+  const pairs = Object.entries(source).filter(
+    ([key, text]) => /^[A-Za-z0-9_.-]{1,80}$/.test(key) && typeof text === "string" && text.trim().length > 0 && text.length <= 500
+  );
+  if (!pairs.length || pairs.length > 120 || pairs.reduce((total, [, text]) => total + String(text).length, 0) > 20_000) {
+    throw new HttpsError("invalid-argument", "too many or invalid UI entries");
+  }
+
+  try {
+    const translated = await translateTexts(pairs.map(([, text]) => String(text)), lang);
+    return Object.fromEntries(pairs.map(([key], index) => [key, translated[index]]));
+  } catch (err) {
+    console.error(`translateUi ${lang} failed:`, err);
+    throw new HttpsError("unavailable", "UI translation unavailable");
+  }
+});
+
 // Agent 5 — a farmer's grounded follow-up question about their specific report. Unlike translateReport
 // (which only ever translates text WE already stored), this is the first callable where free-text farmer
 // input reaches an LLM. Kept low-risk: the agent has no tools (no side effects it could be tricked into),

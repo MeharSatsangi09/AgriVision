@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { ref, uploadBytes } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { isDemoMode, storage } from "@/lib/firebase";
 import { useData } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { compressImage } from "@/lib/image";
@@ -22,6 +22,11 @@ export function useDiagnose() {
   const submit = useCallback(
     async (file: File, loc: LatLng) => {
       setError("");
+      if (isDemoMode) {
+        setError("Visual-only mode: Firebase is not configured, so uploads are disabled.");
+        setPhase("error");
+        return;
+      }
       setPhase("uploading");
       try {
         const body = await compressImage(file);
