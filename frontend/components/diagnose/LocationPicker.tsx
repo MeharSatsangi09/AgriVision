@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { CircleCheck, Crosshair, MapPinned } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { inIndia } from "@/lib/india";
@@ -55,24 +56,32 @@ export default function LocationPicker({ value, onChange }: { value: LatLng | nu
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="mr-auto text-sm font-semibold">{t("loc.title")}</h3>
-        <button
+        <motion.button
           type="button"
           onClick={useGps}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:bg-muted disabled:opacity-50"
+          whileHover={busy ? undefined : { scale: 1.04, y: -1 }}
+          whileTap={busy ? undefined : { scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
         >
           <Crosshair className="size-4" /> {busy ? t("loc.detecting") : t("loc.use")}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={() => setMapOpen((o) => !o)}
+          whileHover={{ scale: 1.04, y: -1 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:bg-muted",
-            mapOpen && "bg-accent text-accent-foreground"
+            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+            mapOpen
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-accent-foreground/15 bg-accent text-accent-foreground hover:bg-accent/70"
           )}
         >
           <MapPinned className="size-4" /> {t("loc.pick")}
-        </button>
+        </motion.button>
       </div>
 
       {value ? (

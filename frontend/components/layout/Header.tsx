@@ -3,18 +3,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Leaf, Languages, Menu, X } from "lucide-react";
+import { Bell, Leaf, Languages, MapPinned, Menu, ScanSearch, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { LANGUAGES, isLangCode } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/core/animated-background";
+import { Dock, DockIcon, DockItem, DockLabel } from "@/components/core/dock";
+import LanguageMenu from "@/components/layout/LanguageMenu";
 
 const NAV = [
   { href: "/diagnose", key: "nav.diagnose" },
   { href: "/map", key: "nav.map" },
   { href: "/alerts", key: "nav.alerts" },
 ] as const;
+
+const NAV_ICON = { "/diagnose": ScanSearch, "/map": MapPinned, "/alerts": Bell } as const;
 
 function NavLink({
   href,
@@ -73,44 +77,38 @@ export default function Header() {
           <span className="text-lg">AgriVision</span>
         </Link>
 
-        <AnimatedBackground
-          key={`desktop-${path}`}
-          defaultValue={path === "/" ? "/" : NAV.find((item) => path.startsWith(item.href))?.href}
-          enableHover
-          className="hidden gap-1 rounded-full bg-muted/50 p-1 sm:flex"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
-        >
-          {NAV.map(({ href, key }) => {
-            const active = path.startsWith(href);
-            return (
-              <NavLink
-                key={href}
-                href={href}
-                active={active}
-                label={t(key)}
-                badge={href === "/alerts" ? unseenCount : undefined}
-                layoutId="nav-active-desktop"
-              />
-            );
-          })}
-        </AnimatedBackground>
+        {/* Apple-style magnifying dock (desktop). Labels open below the items since the header sits at the top edge. */}
+        <div className="hidden sm:block">
+          <Dock className="border border-primary/10 bg-white/60 shadow-sm backdrop-blur-md" panelHeight={52} magnification={50} distance={110} baseSize={38}>
+            {NAV.map(({ href, key }) => {
+              const active = path.startsWith(href);
+              const Icon = NAV_ICON[href];
+              return (
+                <Link key={href} href={href} aria-label={t(key)} className="flex rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <DockItem
+                    className={cn(
+                      "aspect-square rounded-full border transition-colors",
+                      active ? "border-primary bg-primary text-primary-foreground" : "border-primary/10 bg-white text-primary/80"
+                    )}
+                  >
+                    <DockLabel side="bottom" className="border-primary bg-primary text-primary-foreground">{t(key)}</DockLabel>
+                    <DockIcon>
+                      <Icon className="size-full" />
+                    </DockIcon>
+                    {href === "/alerts" && unseenCount > 0 && (
+                      <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-severity-high px-1 text-[10px] font-semibold leading-4 text-white">
+                        {unseenCount}
+                      </span>
+                    )}
+                  </DockItem>
+                </Link>
+              );
+            })}
+          </Dock>
+        </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <label className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
-            <Languages className="size-4" aria-hidden />
-            <span className="sr-only">{t("lang.label")}</span>
-            <select
-              value={lang}
-              onChange={(e) => isLangCode(e.target.value) && setLang(e.target.value)}
-              className="rounded-lg border bg-card px-2.5 py-1.5 text-foreground focus:outline-2 focus:outline-ring"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <LanguageMenu />
 
           <button
             type="button"
