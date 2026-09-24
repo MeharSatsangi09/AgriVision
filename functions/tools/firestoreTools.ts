@@ -3,6 +3,7 @@ import type { Diagnosis } from "../agents/diagnosisAgent";
 import type { TrendStore } from "./trendTools";
 import type { ClassifierResult } from "./classifierTool";
 import type { Reconciliation } from "../agents/reconciliationAgent";
+import type { SatelliteData } from "./earthEngineTool";
 
 const toTrend = (d: FirebaseFirestore.QueryDocumentSnapshot) => {
   const r = d.data();
@@ -26,6 +27,7 @@ export interface ReportInput {
   regenerativeTip?: string; // one low-cost/no-chemical practice tied to the diagnosis, from the Advisory Agent
   classifier?: ClassifierResult; // our own trained model's answer (side by side with Gemini)
   reconciliation?: Reconciliation; // Reconciliation Agent's adjudicated answer (Agent 4)
+  satelliteData?: SatelliteData; // Earth Engine vegetation-index signal for the report's location
 }
 
 // Plain function: called deterministically by the Cloud Function after the pipeline runs.

@@ -2,6 +2,7 @@ import { SequentialAgent, InMemoryRunner } from "@google/adk";
 import { diagnosisAgent, parseDiagnosis, type Diagnosis } from "./diagnosisAgent";
 import { advisoryAgent, parseAdvisory } from "./advisoryAgent";
 import { agreesWith, classifyImage, storageSource, type ClassifierResult } from "../tools/classifierTool";
+import { getVegetationIndex, type SatelliteData } from "../tools/earthEngineTool";
 
 // Diagnosis -> Advisory, output of the first flows to the second via session state.
 export const pipeline = new SequentialAgent({
@@ -88,17 +89,19 @@ async function runOnce(
 }
 
 const CLASSIFIER_TIMEOUT_MS = 30_000;
+const EARTH_ENGINE_TIMEOUT_MS = 20_000;
 
 // Runs our own trained classifier NEXT TO the Gemini pipeline (side by side, never feeding into it).
 // The classifier can never fail or delay the main result: any error or timeout just means no second opinion.
 // It is awaited even when Gemini fails, so its outcome is always logged (and the model load is verifiable).
+// The Earth Engine vegetation-index lookup follows the exact same never-blocks contract.
 export async function runAnalysis(
   image: Buffer,
   mimeType: string,
   lat: number,
   lng: number,
   bucketName?: string
-): Promise<Result & { classifier: ClassifierResult | null }> {
+): Promise<Result & { classifier: ClassifierResult | null; satelliteData: SatelliteData | null }> {
   const classifier: Promise<ClassifierResult | null> = Promise.race([
     classifyImage(image, storageSource(bucketName)),
     sleep(CLASSIFIER_TIMEOUT_MS).then(() => null),
@@ -106,8 +109,20 @@ export async function runAnalysis(
     console.warn("classifier failed:", err);
     return null;
   });
-  const [main, cls] = await Promise.allSettled([runPipeline(image.toString("base64"), mimeType, lat, lng), classifier]);
+  const satellite: Promise<SatelliteData | null> = Promise.race([
+    getVegetationIndex(lat, lng),
+    sleep(EARTH_ENGINE_TIMEOUT_MS).then(() => null),
+  ]).catch((err) => {
+    console.warn("earth engine failed:", err);
+    return null;
+  });
+  const [main, cls, sat] = await Promise.allSettled([
+    runPipeline(image.toString("base64"), mimeType, lat, lng),
+    classifier,
+    satellite,
+  ]);
   const c = cls.status === "fulfilled" ? cls.value : null;
+  const s = sat.status === "fulfilled" ? sat.value : null;
   if (main.status === "rejected") {
     console.log(c ? `classifier: ${c.label} ${c.confidence} (${c.ms} ms)` : "classifier: no result");
     throw main.reason;
@@ -118,5 +133,6 @@ export async function runAnalysis(
       ? `classifier: ${c.label} ${c.confidence} lowConfidence=${c.lowConfidence} agreesWithGemini=${c.agreesWithGemini} (${c.ms} ms)`
       : "classifier: no result"
   );
-  return { ...main.value, classifier: c };
+  console.log(s ? `earth engine: ndvi=${s.ndvi} date=${s.date}` : "earth engine: no result");
+  return { ...main.value, classifier: c, satelliteData: s };
 }

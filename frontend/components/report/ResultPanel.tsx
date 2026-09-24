@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, Sprout, TriangleAlert } from "lucide-react";
+import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, Satellite, Sprout, TriangleAlert } from "lucide-react";
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
@@ -24,6 +24,15 @@ const item = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
 };
+
+// Standard NDVI interpretation bands.
+function ndviLabelKey(ndvi: number): string {
+  if (ndvi < 0.1) return "result.satellite.bare";
+  if (ndvi < 0.2) return "result.satellite.sparse";
+  if (ndvi < 0.4) return "result.satellite.moderate";
+  if (ndvi < 0.6) return "result.satellite.healthy";
+  return "result.satellite.dense";
+}
 
 export default function ResultPanel({ report, onAnother }: { report: Report; onAnother?: () => void }) {
   const { t, lang } = useI18n();
@@ -176,6 +185,20 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
             ) : (
               <p className="mt-1.5 text-sm leading-relaxed">{tr.regenerativeTip}</p>
             )}
+          </motion.section>
+        )}
+
+        {report.satelliteData && (
+          <motion.section variants={item} className="rounded-xl border bg-background p-3.5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Satellite className="size-4 text-primary" /> {t("result.satellite.title")}
+            </h3>
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-lg font-medium">
+              {report.satelliteData.ndvi.toFixed(2)}
+              <span className="text-sm font-normal text-muted-foreground">{t("result.satellite.ndvi")}</span>
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t(ndviLabelKey(report.satelliteData.ndvi))}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{t("result.satellite.asOf", { date: report.satelliteData.date })}</p>
           </motion.section>
         )}
 

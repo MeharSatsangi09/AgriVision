@@ -27,6 +27,15 @@ export interface Report {
   reconciliation?: Reconciliation;
   reconciliationDiagnosisTranslations?: Record<string, string>;
   reconciliationReasoningTranslations?: Record<string, string>;
+  // Earth Engine vegetation-index signal for the report's location (optional — omitted if the lookup
+  // failed or timed out; never blocks the report).
+  satelliteData?: SatelliteData;
+}
+
+export interface SatelliteData {
+  ndvi: number; // -1..1
+  date: string; // date of the underlying satellite composite, not the upload date
+  source: string;
 }
 
 export type ReconciliationAction = "confident" | "deferred_to_gemini" | "request_clearer_photo";

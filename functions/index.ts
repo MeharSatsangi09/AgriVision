@@ -41,7 +41,7 @@ export const processUpload = onObjectFinalized(
     const [buf] = await file.download();
 
     try {
-      const { diagnosis, advisory, regenerativeTip, classifier } = await runAnalysis(buf, contentType, lat, lng, bucketName);
+      const { diagnosis, advisory, regenerativeTip, classifier, satelliteData } = await runAnalysis(buf, contentType, lat, lng, bucketName);
 
       // Reconciliation Agent (Agent 4): adjudicates Gemini vs. the classifier. Runs only when both signals
       // exist; never blocks or fails the report (reconcile() always resolves, with a rule-based fallback).
@@ -72,6 +72,7 @@ export const processUpload = onObjectFinalized(
         ...(regenerativeTip ? { regenerativeTip } : {}),
         ...(classifier ? { classifier } : {}),
         ...(reconciliation ? { reconciliation } : {}),
+        ...(satelliteData ? { satelliteData } : {}),
       });
     } catch (err) {
       console.error("processUpload failed:", err);
