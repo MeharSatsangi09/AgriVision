@@ -18,7 +18,8 @@ const Ctx = createContext<WeatherState>({
   weather: null, status: "loading", usingDefault: false, condition: null, preview: null, setPreview: () => {}, reload: () => {},
 });
 
-const REFRESH_MS = 15 * 60_000;
+const REFRESH_MS = 15 * 60_000; // Open-Meteo updates its "current" values about every 15 minutes
+const STALE_MS = 5 * 60_000; // coming back to the tab after this long refreshes right away
 
 export function WeatherProvider({ children }: { children: ReactNode }) {
   const [place, setPlace] = useState<{ lat: number; lng: number; isDefault: boolean } | null>(null);
@@ -53,9 +54,23 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
     return () => ctl.abort();
   }, [place, tick]);
 
+  // The site follows the real weather on its own: refresh every 15 minutes while the tab is open, and immediately when the
+  // visitor returns to a tab that has been in the background (timers are throttled there). Picking a preview in the weather
+  // card is the only thing that overrides it, until "Live weather" is chosen again.
+  const fetchedAt = useRef(0);
+  useEffect(() => {
+    fetchedAt.current = weather?.fetchedAt ?? 0;
+  }, [weather]);
   useEffect(() => {
     const id = setInterval(() => document.visibilityState === "visible" && setTick((t) => t + 1), REFRESH_MS);
-    return () => clearInterval(id);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && Date.now() - fetchedAt.current > STALE_MS) setTick((t) => t + 1);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const reload = useCallback(() => {
