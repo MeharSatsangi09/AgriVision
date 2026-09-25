@@ -30,10 +30,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <WeatherBackdrop />
               <SmoothScroll />
               <Header />
-              <main className="relative z-[1] mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-              <div className="relative z-[1]">
-                <Footer />
-              </div>
+              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+              <Footer />
             </WeatherProvider>
             </SeenProvider>
             </AuthProvider>

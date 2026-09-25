@@ -59,7 +59,8 @@ export default function WeatherBackdrop() {
 
   return (
     <>
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    {/* z -10: behind all page content without wrapping the content in a stacking context (which would trap the landing splash below the header) */}
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <AnimatePresence>
         <motion.div
           key={key}
