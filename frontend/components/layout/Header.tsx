@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, X } from "lucide-react";
+import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, UserCog, UserRound, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { useAuth } from "@/lib/auth";
@@ -187,6 +187,16 @@ export default function Header() {
                   ))}
                 </select>
               </label>
+              {!user && (
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                  <UserRound className="size-4" aria-hidden /> {t("auth.login")}
+                </Link>
+              )}
+              {user && (
+                <Link href="/profile" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                  <UserCog className="size-4" aria-hidden /> {t("nav.profile")}
+                </Link>
+              )}
               {user && (
                 <Link href="/my-reports" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
                   <FileText className="size-4" aria-hidden /> {t("nav.myReports")}

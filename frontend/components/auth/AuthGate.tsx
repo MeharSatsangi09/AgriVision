@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
 // Shows its children only to a logged-in user; everyone else sees a phone-OTP login prompt in its place.
-export default function AuthGate({ titleKey, children }: { titleKey: "auth.uploadTitle" | "auth.alertsTitle" | "auth.myReportsTitle"; children: ReactNode }) {
+export default function AuthGate({ titleKey, children }: { titleKey: "auth.uploadTitle" | "auth.alertsTitle" | "auth.myReportsTitle" | "auth.profileTitle"; children: ReactNode }) {
   const { user, loading } = useAuth();
   const { t } = useI18n();
 

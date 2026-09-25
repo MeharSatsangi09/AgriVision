@@ -6,6 +6,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    // Private profile: name and place, saved by the logged-in user. Only that user can read or write their own
+    // document; it is never public and never joined to reports. Only these string fields (<= 60 chars) are allowed.
+    match /users/{uid} {
+      function ok(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 60); }
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['firstName', 'lastName', 'place', 'district', 'state', 'updatedAt'])
+        && ok(request.resource.data, 'firstName') && ok(request.resource.data, 'lastName')
+        && ok(request.resource.data, 'place') && ok(request.resource.data, 'district')
+        && ok(request.resource.data, 'state') && ok(request.resource.data, 'updatedAt');
+      allow delete: if false;
+    }
     // Written by the function when the pipeline fails, so the UI can show an error.
     match /uploadErrors/{id} {
       allow read: if true;
