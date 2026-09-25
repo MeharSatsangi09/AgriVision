@@ -158,9 +158,9 @@ export default function MapView() {
             onClick={() => setSelectedId(null)}
             aria-label={t("common.close")}
             title={t("common.close")}
-            className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full border border-severity-high/30 bg-severity-high/10 text-severity-high backdrop-blur-sm transition hover:scale-105 hover:bg-severity-high/25 hover:shadow-[0_0_14px_2px_rgba(200,64,47,0.35)]"
+            className="absolute right-2.5 top-2.5 z-10 grid size-6 place-items-center rounded-full border border-severity-high/30 bg-severity-high/10 text-severity-high backdrop-blur-sm transition hover:scale-110 hover:bg-severity-high/25 hover:shadow-[0_0_10px_2px_rgba(200,64,47,0.35)]"
           >
-            <X className="size-4" aria-hidden />
+            <X className="size-3.5" aria-hidden />
           </button>
           <ResultPanel report={selected} />
         </div>
