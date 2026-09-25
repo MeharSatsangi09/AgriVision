@@ -23,28 +23,59 @@ export class QuotaError extends Error {}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// A per-minute 429 says how long to wait ("Please retry in 8.4s" / retryDelay "8s"). Wait at least that
+// long (plus a small margin); with no parseable hint, fall back to a safe default instead of guessing low.
+export const DEFAULT_RETRY_MS = 9_000;
+const RETRY_MARGIN_MS = 1_000;
+const MAX_HINT_MS = 30_000; // a longer hint isn't worth blocking the upload on
+export function parseRetryDelayMs(message: string): number | null {
+  const m = /retry in ([\d.]+)\s*s/i.exec(message) ?? /"?retryDelay"?\s*[:=]\s*"?([\d.]+)s/i.exec(message);
+  if (!m) return null;
+  const secs = parseFloat(m[1]);
+  return Number.isFinite(secs) && secs >= 0 ? Math.round(secs * 1000) : null;
+}
+export const retryWaitMs = (message: string) => {
+  const hint = parseRetryDelayMs(message);
+  return hint === null ? DEFAULT_RETRY_MS : Math.max(hint + RETRY_MARGIN_MS, RETRY_MARGIN_MS);
+};
+
 // Gemini calls occasionally hang or 5xx; cancel each attempt after a timeout and retry once.
-// A daily-quota 429 is not retried (pointless); a per-minute 429 waits a few seconds first.
+// A daily-quota 429 is not retried (pointless). A per-minute 429 waits the API's own retry-after hint
+// (default 9s) before retrying; if it strikes on the last attempt and the hint is short, one extra
+// attempt is granted so the wait is actually used instead of failing the upload.
 export async function runPipeline(
   imageBase64: string,
   mimeType: string,
   lat: number,
   lng: number,
-  weather = ""
+  weather = "",
+  run: typeof runOnce = runOnce,
+  wait: (ms: number) => Promise<unknown> = sleep
 ): Promise<Result> {
   let lastErr: unknown;
-  for (let i = 1; i <= ATTEMPTS; i++) {
+  let maxAttempts = ATTEMPTS;
+  let bonusUsed = false;
+  for (let i = 1; i <= maxAttempts; i++) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
     try {
-      return await runOnce(imageBase64, mimeType, lat, lng, weather, ctl.signal);
+      return await run(imageBase64, mimeType, lat, lng, weather, ctl.signal);
     } catch (e) {
       lastErr = ctl.signal.aborted ? new Error(`pipeline attempt ${i} timed out`) : e;
       console.error(`runPipeline attempt ${i} failed:`, lastErr);
       const msg = String((lastErr as Error)?.message ?? "");
       if (msg.includes("429")) {
         if (msg.includes("PerDay")) throw new QuotaError(msg);
-        if (i < ATTEMPTS) await sleep(6000);
+        const hint = parseRetryDelayMs(msg);
+        if (i === maxAttempts && !bonusUsed && (hint === null || hint <= MAX_HINT_MS)) {
+          bonusUsed = true;
+          maxAttempts += 1;
+        }
+        if (i < maxAttempts) {
+          const ms = retryWaitMs(msg);
+          console.warn(`runPipeline: rate limited, waiting ${ms} ms before retry (hint ${hint ?? "none"} ms)`);
+          await wait(ms);
+        }
       }
     } finally {
       clearTimeout(timer);
