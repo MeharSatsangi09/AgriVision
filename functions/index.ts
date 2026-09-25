@@ -13,6 +13,7 @@ import { isLang, translateTexts } from "./tools/translate";
 import { inIndia } from "./tools/india";
 import { transcribeAudio } from "./tools/speechTool";
 import { uploaderUid } from "./tools/uploader";
+import { transliterate } from "./agents/transliterationAgent";
 
 initializeApp();
 
@@ -239,4 +240,35 @@ export const transcribeSpeech = onCall({ region: REGION, maxInstances: 3, memory
     console.error("transcribeSpeech failed:", err);
     throw new HttpsError("unavailable", "transcription unavailable");
   }
+});
+
+// The logged-in user's own profile text (name, village/town, district), shown in the site's current language by
+// TRANSLITERATING it (same name, other script; plain machine translation gets names wrong). Only the caller's own
+// users/{uid} document is read. Results are cached on it under `translations.<lang>`; the client overwrites the whole
+// document on every save, which drops the cache, so a cached value can never be stale. If the model is unavailable the
+// call returns {} and the page just shows what the user typed.
+const PROFILE_TEXT_FIELDS = ["firstName", "lastName", "place", "district"] as const;
+export const translateProfile = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 60 }, async (req) => {
+  const uid = req.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "log in first");
+  const lang = (req.data as { lang?: unknown } | undefined)?.lang;
+  if (lang !== "en" && !isLang(lang)) throw new HttpsError("invalid-argument", "a supported lang is required");
+
+  const ref = getFirestore().collection("users").doc(uid);
+  const snap = await ref.get();
+  if (!snap.exists) return {};
+  const data = snap.data() as Record<string, unknown> & { translations?: Record<string, Record<string, string>> };
+  const fields: Record<string, string> = {};
+  for (const f of PROFILE_TEXT_FIELDS) {
+    const v = data[f];
+    if (typeof v === "string" && v.trim() && v.length <= 60) fields[f] = v.trim();
+  }
+  if (!Object.keys(fields).length) return {};
+  const cached = data.translations?.[lang];
+  if (cached && Object.keys(fields).every((f) => cached[f])) return cached;
+
+  const result = await transliterate(fields, lang);
+  if (!result) return {};
+  await ref.update({ [`translations.${lang}`]: result });
+  return result;
 });
