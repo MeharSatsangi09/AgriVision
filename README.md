@@ -168,7 +168,6 @@ functions/     Cloud Functions, ADK agents, tools, offline test scripts
 training/      classifier training and export
 firestore.rules, storage.rules, firebase.json
 docs/assets/   animated SVGs used by this README
-TEAM_SUMMARY.md  plain-language project summary
 ```
 
 ## Getting started
@@ -221,4 +220,4 @@ For local login tests, `NEXT_PUBLIC_AUTH_EMULATOR=1` points the app at the Fireb
 
 ## Team
 
-Built for a hackathon. See [TEAM_SUMMARY.md](TEAM_SUMMARY.md) for a plain-language walkthrough.
+Built for a hackathon.
