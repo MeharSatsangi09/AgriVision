@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Leaf, Languages, MapPinned, Menu, ScanSearch, X } from "lucide-react";
+import { Bell, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
+import { useAuth } from "@/lib/auth";
 import { LANGUAGES, isLangCode } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/core/animated-background";
@@ -62,6 +63,7 @@ export default function Header() {
   const { t, lang, setLang } = useI18n();
   const path = usePathname();
   const { unseenCount } = useSeen();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the mobile menu on route change so it doesn't stay open after navigating.
@@ -109,6 +111,16 @@ export default function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <LanguageMenu />
+          {user && (
+            <button
+              type="button"
+              onClick={() => logout()}
+              title={user.phoneNumber ?? undefined}
+              className="hidden items-center gap-1.5 rounded-full border border-primary/15 bg-white/60 px-3.5 py-2 text-sm font-medium text-primary shadow-sm backdrop-blur-md transition-colors hover:bg-primary/10 sm:inline-flex"
+            >
+              <LogOut className="size-4" aria-hidden /> {t("auth.logout")}
+            </button>
+          )}
 
           <button
             type="button"
@@ -183,6 +195,15 @@ export default function Header() {
                   ))}
                 </select>
               </label>
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary"
+                >
+                  <LogOut className="size-4" aria-hidden /> {t("auth.logout")}
+                </button>
+              )}
             </AnimatedBackground>
           </motion.div>
         )}

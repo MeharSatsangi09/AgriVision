@@ -1,5 +1,6 @@
 "use client";
 import UploadCard from "@/components/diagnose/UploadCard";
+import AuthGate from "@/components/auth/AuthGate";
 import ProcessingSteps from "@/components/diagnose/ProcessingSteps";
 import { useDiagnose } from "@/components/diagnose/useDiagnose";
 import ResultPanel from "@/components/report/ResultPanel";
@@ -16,7 +17,9 @@ export default function DiagnosePage() {
             ) : phase === "uploading" || phase === "analyzing" ? (
                 <ProcessingSteps phase={phase} />
             ) : (
-                <UploadCard error={error} onSubmit={submit} />
+                <AuthGate titleKey="auth.uploadTitle">
+                    <UploadCard error={error} onSubmit={submit} />
+                </AuthGate>
             )}
             {phase !== "analyzing" && phase !== "uploading" && (
                 <>
