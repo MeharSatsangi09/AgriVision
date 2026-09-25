@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 
 // Phone-number OTP login (Firebase Auth phone provider): number -> SMS code -> verified.
 // India-only (+91), matching the app's audience; the number is used only to sign in and is never stored in reports.
-const INDIA_MOBILE = /^[6-9]\d{9}$/;
+const INDIA_MOBILE = /^\d{10}$/; // any 10 digits: Firebase itself validates the number, and test numbers like 1234567890 must work
 
 function errorKey(code: string | undefined) {
   switch (code) {
