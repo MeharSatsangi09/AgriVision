@@ -6,6 +6,7 @@ import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, Satellite, Sprout, Tri
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
+import SampleBadge from "@/components/report/SampleBadge";
 import ReconciliationHero from "@/components/report/ReconciliationHero";
 import FollowUpBox from "@/components/report/FollowUpBox";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -117,6 +118,7 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-semibold tracking-tight">{tr.disease}</h2>
             {!unclear && !healthy && <SeverityBadge severity={d.severity} />}
+            {report.isSeeded && <SampleBadge />}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {timeAgo(report.timestamp, lang)} · {roundCoord(report.lat)}°N, {roundCoord(report.lng)}°E

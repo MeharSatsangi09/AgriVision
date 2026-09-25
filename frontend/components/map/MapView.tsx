@@ -5,6 +5,7 @@ import { TriangleAlert } from "lucide-react";
 import OutbreakMap from "@/components/map/OutbreakMap";
 import ResultPanel from "@/components/report/ResultPanel";
 import SeverityBadge from "@/components/report/SeverityBadge";
+import SampleBadge from "@/components/report/SampleBadge";
 import { useData } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -139,6 +140,7 @@ export default function MapView() {
                     {!["unclear", "healthy"].includes(r.diagnosis.disease) && (
                       <SeverityBadge severity={r.diagnosis.severity} className="px-2 py-0 text-[11px]" />
                     )}
+                    {r.isSeeded && <SampleBadge className="px-1.5 py-0 text-[10px]" />}
                     {timeAgo(r.timestamp, lang)}
                   </span>
                 </span>
