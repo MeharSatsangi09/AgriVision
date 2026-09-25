@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, X } from "lucide-react";
 import OutbreakMap from "@/components/map/OutbreakMap";
 import ResultPanel from "@/components/report/ResultPanel";
 import SeverityBadge from "@/components/report/SeverityBadge";
@@ -124,7 +124,7 @@ export default function MapView() {
           {filtered.map((r) => (
             <li key={r.id}>
               <button
-                onClick={() => setSelectedId(r.id)}
+                onClick={() => setSelectedId(r.id === selectedId ? null : r.id)} // clicking the open card again closes it
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl border bg-card p-2.5 text-left transition hover:bg-muted",
                   r.id === selectedId && "border-primary ring-1 ring-primary"
@@ -151,7 +151,20 @@ export default function MapView() {
         </ul>
       </div>
 
-      {selected && <ResultPanel report={selected} />}
+      {selected && (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setSelectedId(null)}
+            aria-label={t("common.close")}
+            title={t("common.close")}
+            className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full border border-severity-high/30 bg-severity-high/10 text-severity-high backdrop-blur-sm transition hover:scale-105 hover:bg-severity-high/25 hover:shadow-[0_0_14px_2px_rgba(200,64,47,0.35)]"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+          <ResultPanel report={selected} />
+        </div>
+      )}
     </div>
   );
 }
