@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="t d">
+<title id="t">AgriVision</title><desc id="d">Animated banner: a leaf is scanned and diagnosed while leaves drift upward.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0c2014"/><stop offset=".55" stop-color="#173d24"/><stop offset="1" stop-color="#2f6b3a"/></linearGradient>
+<linearGradient id="title" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8fdbe6"/><stop offset=".45" stop-color="#ffe2b0"/><stop offset="1" stop-color="#ffb04a"/></linearGradient>
+<linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b6ff9c" stop-opacity="0"/><stop offset=".8" stop-color="#b6ff9c" stop-opacity=".55"/><stop offset="1" stop-color="#eaffd8" stop-opacity=".95"/></linearGradient>
+<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe17a" stop-opacity=".55"/><stop offset="1" stop-color="#ffe17a" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#fff" stroke-opacity=".07"/></pattern>
+<clipPath id="leafclip"><path d="M0 -150 C90 -130 140 -40 120 60 C100 150 30 190 0 200 C-30 190 -100 150 -120 60 C-140 -40 -90 -130 0 -150 Z"/></clipPath>
+<style>
+text{font-family:Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif}
+.fl{animation-name:float;animation-iteration-count:infinite;animation-timing-function:linear}
+@keyframes float{0%{transform:translate(0,0) rotate(0deg);opacity:0}10%{opacity:1}50%{transform:translate(28px,-230px) rotate(120deg)}90%{opacity:1}100%{transform:translate(-14px,-470px) rotate(260deg);opacity:0}}
+.ring{transform-box:fill-box;transform-origin:center;animation:pulse 2.6s ease-out infinite}
+.ring2{animation-delay:1.3s}
+@keyframes pulse{0%{transform:scale(.7);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 60s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rise{animation:rise 1.4s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.fade{animation:rise 1.2s ease-out both}
+.scan{animation:scan 3.4s ease-in-out infinite}
+@keyframes scan{0%{transform:translateY(-170px)}100%{transform:translateY(220px)}}
+.tag{animation:tag 3.4s ease-in-out infinite}
+@keyframes tag{0%,38%{opacity:0;transform:translateY(8px)}50%,88%{opacity:1;transform:none}100%{opacity:0}}
+.chip{animation:chip 4s ease-in-out infinite}
+@keyframes chip{0%,100%{opacity:.85}50%{opacity:1}}
+</style>
+</defs>
+<rect width="1280" height="400" fill="url(#bg)"/>
+<rect width="1280" height="400" fill="url(#grid)"/>
+<circle cx="1150" cy="40" r="260" fill="url(#glow)"/>
+<g fill="none" stroke="#fff" stroke-opacity=".08"><circle class="spin" cx="1160" cy="20" r="230" stroke-dasharray="4 14"/><circle class="spin" cx="1160" cy="20" r="160" stroke-dasharray="2 10" style="animation-direction:reverse"/></g>
+<g class="fl" style="animation-duration:9.0s;animation-delay:-0.0s"><g transform="translate(80 420) scale(0.7)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:11.2s;animation-delay:-1.3s"><g transform="translate(210 420) scale(0.95)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:13.4s;animation-delay:-2.6s"><g transform="translate(330 420) scale(1.2)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:15.600000000000001s;animation-delay:-3.9000000000000004s"><g transform="translate(470 420) scale(0.7)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:9.0s;animation-delay:-5.2s"><g transform="translate(610 420) scale(0.95)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:11.2s;animation-delay:-6.5s"><g transform="translate(760 420) scale(1.2)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:13.4s;animation-delay:-7.800000000000001s"><g transform="translate(880 420) scale(0.7)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:15.600000000000001s;animation-delay:-9.1s"><g transform="translate(1010 420) scale(0.95)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:9.0s;animation-delay:-10.4s"><g transform="translate(1120 420) scale(1.2)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g><g class="fl" style="animation-duration:11.2s;animation-delay:-11.700000000000001s"><g transform="translate(1200 420) scale(0.7)"><path d="M0 0 C6 -9 15 -9 20 0 C15 9 6 9 0 0Z" fill="#8fd08a" fill-opacity=".55"/></g></g>
+<g class="rise"><circle class="ring" cx="112" cy="128" r="44" fill="none" stroke="#b6ff9c" stroke-width="2"/><circle class="ring ring2" cx="112" cy="128" r="44" fill="none" stroke="#b6ff9c" stroke-width="2"/>
+<rect x="68" y="84" width="88" height="88" rx="22" fill="#2f6b3a" stroke="#b6ff9c" stroke-opacity=".5"/>
+<g transform="translate(112 128)" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M-8 22 A26 26 0 0 0 22 -6 A64 64 0 0 0 19 -22 C10 -18 2 -18 -8 -14 A18 18 0 0 0 -8 22"/><path d="M-26 30 C-22 20 -14 8 0 2"/></g></g>
+<text class="rise" x="190" y="150" font-size="98" font-weight="800" fill="url(#title)" letter-spacing="-3">AgriVision</text>
+<text class="fade" style="animation-delay:.5s" x="194" y="196" font-size="26" font-weight="600" fill="#e5f0df">AI crop-health diagnosis for Indian farmers</text>
+<text class="fade" style="animation-delay:.8s" x="194" y="232" font-size="19" fill="#b8d8b7">Photo in &#8594; disease, severity and advice out &#8212; in 9 languages,</text>
+<text class="fade" style="animation-delay:1s" x="194" y="260" font-size="19" fill="#b8d8b7">with outbreak alerts, a live map and weather-aware timing.</text>
+<g class="chip" font-size="15" font-weight="600" fill="#173d24">
+<g transform="translate(194 296)"><rect width="128" height="34" rx="17" fill="#e5f0df"/><text x="64" y="22" text-anchor="middle">Gemini + ADK</text></g>
+<g transform="translate(334 296)"><rect width="150" height="34" rx="17" fill="#e5f0df"/><text x="75" y="22" text-anchor="middle">Own CNN classifier</text></g>
+<g transform="translate(496 296)"><rect width="118" height="34" rx="17" fill="#e5f0df"/><text x="59" y="22" text-anchor="middle">Firebase</text></g>
+<g transform="translate(626 296)"><rect width="110" height="34" rx="17" fill="#e5f0df"/><text x="55" y="22" text-anchor="middle">Next.js 14</text></g>
+</g>
+<g transform="translate(1010 205)">
+<g clip-path="url(#leafclip)"><rect x="-140" y="-160" width="280" height="370" fill="#2f7a3a"/>
+<path d="M0 -150 C90 -130 140 -40 120 60 C100 150 30 190 0 200 C-30 190 -100 150 -120 60 C-140 -40 -90 -130 0 -150 Z" fill="#3f9b4f" fill-opacity=".9"/><path d="M0 -60 L-70 -92" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 -60 L70 -92" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 -10 L-70 -42" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 -10 L70 -42" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 40 L-70 8" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 40 L70 8" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 90 L-70 58" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 90 L70 58" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 140 L-70 108" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 140 L70 108" stroke="#7fbf7a" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M0 -150 L0 200" stroke="#a9e6a2" stroke-width="3"/><circle cx="-40" cy="-30" r="12" fill="#5a3a1a" fill-opacity=".8"/><circle cx="35" cy="10" r="16" fill="#5a3a1a" fill-opacity=".8"/><circle cx="-20" cy="70" r="10" fill="#5a3a1a" fill-opacity=".8"/><circle cx="50" cy="-60" r="9" fill="#5a3a1a" fill-opacity=".8"/><circle cx="-60" cy="30" r="8" fill="#5a3a1a" fill-opacity=".8"/><circle cx="10" cy="120" r="11" fill="#5a3a1a" fill-opacity=".8"/>
+<g class="scan"><rect x="-140" y="-40" width="280" height="60" fill="url(#beam)"/></g></g>
+<path d="M0 -150 C90 -130 140 -40 120 60 C100 150 30 190 0 200 C-30 190 -100 150 -120 60 C-140 -40 -90 -130 0 -150 Z" fill="none" stroke="#b6ff9c" stroke-opacity=".7" stroke-width="2"/>
+<g fill="none" stroke="#b6ff9c" stroke-width="3" stroke-linecap="round"><path d="M-150 -120 V-165 H-105"/><path d="M105 -165 H150 V-120"/><path d="M-150 150 V195 H-105"/><path d="M105 195 H150 V150"/></g>
+<g class="tag"><rect x="-84" y="-206" width="196" height="34" rx="17" fill="#c8402f"/><text x="14" y="-184" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">Late blight &#183; 92%</text></g>
+</g>
+</svg>

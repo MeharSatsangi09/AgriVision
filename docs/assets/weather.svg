@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="340" viewBox="0 0 900 340" role="img" aria-labelledby="t d">
+<title id="t">Weather that touches the cards</title><desc id="d">Rain lands on a card, splashes, and a bead slides to the corner and drips down the side. Then the sun leaves a soft glow on the card corner.</desc>
+<defs>
+<linearGradient id="rainsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bdc9d6"/><stop offset="1" stop-color="#a5b8c2"/></linearGradient>
+<linearGradient id="sunsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3fbd8"/><stop offset="1" stop-color="#b4e57a"/></linearGradient>
+<radialGradient id="sunglow" cx="1" cy="0" r="1"><stop offset="0" stop-color="#ffe17a" stop-opacity=".95"/><stop offset=".6" stop-color="#ffe98f" stop-opacity=".25"/><stop offset="1" stop-color="#ffe98f" stop-opacity="0"/></radialGradient>
+<radialGradient id="corner" cx="1" cy="0" r="1"><stop offset="0" stop-color="#ffd76a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>
+<linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef7ea"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#e6f3e2"/></linearGradient>
+<clipPath id="above"><rect x="0" y="0" width="900" height="150"/></clipPath>
+<clipPath id="cardclip"><rect x="140" y="150" width="620" height="120" rx="16"/></clipPath>
+<style>
+text{font-family:Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif}
+.rain{animation:rainp 12s ease-in-out infinite}
+.sun{animation:sunp 12s ease-in-out infinite}
+@keyframes rainp{0%,42%{opacity:1}50%,92%{opacity:0}100%{opacity:1}}
+@keyframes sunp{0%,42%{opacity:0}50%,92%{opacity:1}100%{opacity:0}}
+.drop{animation:fall 1s linear infinite}
+@keyframes fall{from{transform:translate(0,0)}to{transform:translate(-14px,215px)}}
+.sp{animation:splash .9s ease-out infinite}
+.sp2{animation-name:splash2}
+@keyframes splash{0%{transform:translate(0,0);opacity:0}10%{opacity:1}100%{transform:translate(14px,-16px);opacity:0}}
+@keyframes splash2{0%{transform:translate(0,0);opacity:0}10%{opacity:1}100%{transform:translate(-13px,-12px);opacity:0}}
+.glint{animation:glint 4s ease-in-out infinite}
+@keyframes glint{0%,100%{opacity:.55}50%{opacity:1}}
+.rays{transform-box:fill-box;transform-origin:center;animation:spin 90s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style></defs>
+<rect width="900" height="340" fill="#f6f8f2"/>
+<g class="rain"><rect width="900" height="340" fill="url(#rainsky)"/>
+<g clip-path="url(#above)"><line class="drop" style="animation-delay:-0.0s" x1="60" y1="-40" x2="55" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-0.37s" x1="121" y1="-40" x2="116" y2="-14" stroke="#375f80" stroke-width="1.9" stroke-linecap="round"/><line class="drop" style="animation-delay:-0.74s" x1="182" y1="-40" x2="177" y2="-14" stroke="#375f80" stroke-width="2.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-1.1099999999999999s" x1="216" y1="-40" x2="211" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-1.48s" x1="277" y1="-40" x2="272" y2="-14" stroke="#375f80" stroke-width="1.9" stroke-linecap="round"/><line class="drop" style="animation-delay:-1.85s" x1="338" y1="-40" x2="333" y2="-14" stroke="#375f80" stroke-width="2.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-2.2199999999999998s" x1="372" y1="-40" x2="367" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-2.59s" x1="433" y1="-40" x2="428" y2="-14" stroke="#375f80" stroke-width="1.9" stroke-linecap="round"/><line class="drop" style="animation-delay:-2.96s" x1="494" y1="-40" x2="489" y2="-14" stroke="#375f80" stroke-width="2.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-3.33s" x1="528" y1="-40" x2="523" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-3.7s" x1="589" y1="-40" x2="584" y2="-14" stroke="#375f80" stroke-width="1.9" stroke-linecap="round"/><line class="drop" style="animation-delay:-4.07s" x1="650" y1="-40" x2="645" y2="-14" stroke="#375f80" stroke-width="2.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-4.4399999999999995s" x1="684" y1="-40" x2="679" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-4.81s" x1="745" y1="-40" x2="740" y2="-14" stroke="#375f80" stroke-width="1.9" stroke-linecap="round"/><line class="drop" style="animation-delay:-5.18s" x1="806" y1="-40" x2="801" y2="-14" stroke="#375f80" stroke-width="2.4" stroke-linecap="round"/><line class="drop" style="animation-delay:-5.55s" x1="840" y1="-40" x2="835" y2="-14" stroke="#375f80" stroke-width="1.4" stroke-linecap="round"/></g>
+<rect x="140" y="150" width="620" height="120" rx="16" fill="url(#card)" stroke="#9fb7a4"/>
+<text x="170" y="196" font-size="20" font-weight="700" fill="#173d24">Late blight</text><text x="170" y="222" font-size="13" fill="#4a5f4d">medium severity · 3 hours ago</text>
+<g transform="translate(150 150)"><circle class="sp" style="animation-delay:-0.0s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-0.12s" r="1.8" fill="#c9deef"/></g><g transform="translate(270 150)"><circle class="sp" style="animation-delay:-0.42s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-0.54s" r="1.8" fill="#c9deef"/></g><g transform="translate(390 150)"><circle class="sp" style="animation-delay:-0.84s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-0.96s" r="1.8" fill="#c9deef"/></g><g transform="translate(510 150)"><circle class="sp" style="animation-delay:-1.26s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-1.38s" r="1.8" fill="#c9deef"/></g><g transform="translate(630 150)"><circle class="sp" style="animation-delay:-1.68s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-1.7999999999999998s" r="1.8" fill="#c9deef"/></g><g transform="translate(750 150)"><circle class="sp" style="animation-delay:-2.1s" r="2.2" fill="#c9deef"/><circle class="sp sp2" style="animation-delay:-2.22s" r="1.8" fill="#c9deef"/></g>
+<g><circle r="4.2" fill="#dcecfa" stroke="#3c6b90"><animateMotion dur="6s" repeatCount="indefinite" keyPoints="0;.42;.42;1" keyTimes="0;.5;.55;1" calcMode="linear" path="M520 148 L190 148 L140 148 L140 300"/></circle>
+<circle r="3" fill="#dcecfa" stroke="#3c6b90"><animateMotion dur="6s" begin="-3s" repeatCount="indefinite" keyPoints="0;.6;.6;1" keyTimes="0;.55;.6;1" calcMode="linear" path="M330 148 L760 148 L760 300"/></circle></g>
+<path d="M140 152 V268" stroke="#3c6b90" stroke-opacity=".35" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="40 300"><animate attributeName="stroke-dashoffset" values="80;-260" dur="3s" repeatCount="indefinite"/></path>
+<text x="450" y="312" text-anchor="middle" font-size="14" font-weight="600" fill="#31536c">Rain lands on the cards, splashes, then beads slide to a corner and drip off the side</text></g>
+<g class="sun"><rect width="900" height="340" fill="url(#sunsky)"/>
+<circle cx="900" cy="0" r="380" fill="url(#sunglow)"/>
+<g opacity=".22"><circle class="rays" cx="900" cy="0" r="330" fill="none" stroke="#fff3a0" stroke-width="260" stroke-dasharray="14 42"/></g>
+<rect x="140" y="150" width="620" height="120" rx="16" fill="url(#card)" stroke="#a9c99a"/>
+<g clip-path="url(#cardclip)"><rect class="glint" x="140" y="150" width="620" height="120" fill="url(#corner)"/></g>
+<path class="glint" d="M600 150.5 H744" stroke="#fff0b0" stroke-width="1.6" stroke-linecap="round" stroke-opacity=".9"/><path class="glint" d="M759.5 166 V210" stroke="#fff0b0" stroke-width="1.6" stroke-linecap="round" stroke-opacity=".8"/>
+<text x="170" y="196" font-size="20" font-weight="700" fill="#173d24">Black spot</text><text x="170" y="222" font-size="13" fill="#4a5f4d">high severity · yesterday</text>
+<text x="450" y="312" text-anchor="middle" font-size="14" font-weight="600" fill="#4f6b2a">Sun leaves a soft reflection on the card corner nearest the sun</text></g>
+</svg>
