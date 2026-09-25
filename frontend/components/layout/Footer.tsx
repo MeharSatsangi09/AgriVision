@@ -18,8 +18,8 @@ export default function Footer() {
           className="group ml-auto inline-flex items-center gap-2 rounded-full border border-primary/25 bg-gradient-to-br from-[#d5ebd0] via-white to-[#e6f3e2] px-4 py-2 font-medium text-primary shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_6px_18px_-4px_rgba(47,107,58,0.35)]"
         >
           <Database className="size-4" />
-          Regional data
-          <span className="hidden font-normal text-muted-foreground sm:inline">· researchers &amp; policymakers</span>
+          {t("footer.data")}
+          <span className="hidden font-normal text-muted-foreground sm:inline">· {t("footer.dataSub")}</span>
           <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Link>
       </div>

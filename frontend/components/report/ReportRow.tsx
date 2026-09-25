@@ -4,7 +4,8 @@ import { MapPin } from "lucide-react";
 import SeverityBadge from "@/components/report/SeverityBadge";
 import SampleBadge from "@/components/report/SampleBadge";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import { roundCoord, timeAgo, titleCase } from "@/lib/format";
+import { roundCoord, timeAgo } from "@/lib/format";
+import { diseaseName } from "@/lib/diseases";
 import { reportUsername } from "@/lib/username";
 import type { Report } from "@/lib/types";
 
@@ -13,7 +14,7 @@ import type { Report } from "@/lib/types";
 export default function ReportRow({ report: r, showName = false }: { report: Report; showName?: boolean }) {
   const { t, lang } = useI18n();
   const d = r.diagnosis;
-  const name = r.diseaseTranslations?.[lang] ?? titleCase(d.disease);
+  const name = diseaseName(d.disease, lang, r.diseaseTranslations?.[lang]);
   const isDisease = !["unclear", "healthy"].includes(d.disease.toLowerCase());
   return (
     <Link

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import ReportRow, { ReportScroller } from "@/components/report/ReportRow";
 import { useData } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { diseaseName } from "@/lib/diseases";
 
 // Community feed: every public report, newest first. Only shows data that is already public on the map (photo,
 // disease, rounded location, time) plus a display name derived from the report's own id (never from who uploaded it).
@@ -16,7 +17,7 @@ export default function ReportsFeed() {
     const needle = q.trim().toLowerCase();
     if (!needle) return reports;
     return reports.filter((r) => {
-      const local = r.diseaseTranslations?.[lang] ?? "";
+      const local = diseaseName(r.diagnosis.disease, lang, r.diseaseTranslations?.[lang]);
       return r.diagnosis.disease.toLowerCase().includes(needle) || local.toLowerCase().includes(needle);
     });
   }, [reports, q, lang]);

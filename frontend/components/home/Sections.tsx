@@ -6,9 +6,11 @@ import { Activity, ArrowUpRight, Bell, Camera, Check, ChevronRight, Leaf, MapPin
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import { MorphingPopover, MorphingPopoverContent, MorphingPopoverTrigger } from "@/components/core/morphing-popover";
 import { Spotlight } from "@/components/core/spotlight";
-import { timeAgo, titleCase } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
+import { diseaseName } from "@/lib/diseases";
 import { reportUsername } from "@/lib/username";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { LANGUAGES } from "@/lib/languages";
 import { groupOutbreaks, useData } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
 import { cn } from "@/lib/utils";
@@ -25,36 +27,44 @@ const item = {
 
 export function Hero() {
   const { t } = useI18n();
+  const { reports } = useData();
   const [signal, setSignal] = useState<"leaf" | "field" | "advice">("leaf");
   const signals = [
-    { id: "leaf" as const, label: "Leaf health", icon: Leaf },
-    { id: "field" as const, label: "Field signals", icon: Activity },
-    { id: "advice" as const, label: "Local advice", icon: ShieldCheck },
+    { id: "leaf" as const, label: t("hero.tab.leaf"), icon: Leaf },
+    { id: "field" as const, label: t("hero.tab.field"), icon: Activity },
+    { id: "advice" as const, label: t("hero.tab.advice"), icon: ShieldCheck },
   ];
 
+  // The three cards show real facts, not marketing numbers: (1) the average confidence the AI reported on the disease
+  // reports on the site right now, (2) the outbreak rule the Trend Agent actually uses (3+ reports of one disease within
+  // 50 km in 7 days), (3) the number of languages the app really supports.
+  const diagnosed = reports.filter((r) => !["unclear", "healthy"].includes(r.diagnosis.disease.toLowerCase()));
+  const avgConfidence = diagnosed.length
+    ? Math.round((diagnosed.reduce((sum, r) => sum + r.diagnosis.confidence, 0) / diagnosed.length) * 100)
+    : null;
   const allContent = {
     leaf: {
-      eyebrow: "VISUAL CHECK",
-      title: "A clearer read on every leaf",
-      detail: "One close-up photo becomes a practical next step for the field.",
-      value: "92%",
-      label: "signal confidence",
+      eyebrow: t("hero.leaf.eyebrow"),
+      title: t("hero.leaf.title"),
+      detail: t("hero.leaf.detail"),
+      value: avgConfidence === null ? "—" : `${avgConfidence}%`,
+      label: t("hero.leaf.label", { n: diagnosed.length }),
       color: "bg-primary",
     },
     field: {
-      eyebrow: "FIELD PULSE",
-      title: "See patterns before they spread",
-      detail: "Nearby reports turn isolated symptoms into an early warning.",
-      value: "24 km",
-      label: "signal radius",
+      eyebrow: t("hero.field.eyebrow"),
+      title: t("hero.field.title"),
+      detail: t("hero.field.detail"),
+      value: t("hero.field.value"),
+      label: t("hero.field.label"),
       color: "bg-severity-high",
     },
     advice: {
-      eyebrow: "FARMER READY",
-      title: "Advice that meets the moment",
-      detail: "Get a simple explanation and treatment guidance in your language.",
-      value: "12",
-      label: "supported languages",
+      eyebrow: t("hero.advice.eyebrow"),
+      title: t("hero.advice.title"),
+      detail: t("hero.advice.detail"),
+      value: String(LANGUAGES.length),
+      label: t("hero.advice.label"),
       color: "bg-severity-medium",
     },
   };
@@ -86,7 +96,7 @@ export function Hero() {
         <div className="max-w-2xl">
           <div className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#b8d8b7]">
             <span className="grid size-8 place-items-center rounded-full bg-white/10"><Leaf className="size-4" /></span>
-            Crop intelligence for the field
+            {t("hero.eyebrow")}
           </div>
           <h1 className="max-w-xl text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">{t("hero.title")}</h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-white/70 md:text-lg">{t("hero.subtitle")}</p>
@@ -104,12 +114,12 @@ export function Hero() {
                 href="/map"
                 className="group inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/5 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/70 hover:bg-white/15 hover:shadow-[0_0_24px_-2px_rgba(255,255,255,0.3)]"
               >
-                Explore field signals <MapPin className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                {t("hero.explore")} <MapPin className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
               </Link>
             </motion.div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm">
-            {["Photo-first diagnosis", "Localized advice"].map((feature) => (
+            {[t("hero.pill1"), t("hero.pill2")].map((feature) => (
               <span
                 key={feature}
                 className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3.5 py-1.5 font-medium text-white shadow-sm backdrop-blur-sm"
@@ -122,8 +132,8 @@ export function Hero() {
 
         <div className="relative rounded-[1.5rem] border border-white/40 bg-[#edf3e7]/70 p-3 text-[#173d24] shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-4">
           <div className="flex items-center justify-between px-2 pb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#2f4a34]">
-            <span>AgriVision / live view</span>
-            <span className="flex items-center gap-1.5"><span className="size-1.5 animate-pulse rounded-full bg-[#4d9d56]" /> Ready</span>
+            <span>{t("hero.widget.title")}</span>
+            <span className="flex items-center gap-1.5"><span className="size-1.5 animate-pulse rounded-full bg-[#4d9d56]" /> {t("hero.widget.ready")}</span>
           </div>
 
           {/* Tab dock: a shared pill slides between tabs (layoutId), tabs lift on hover, icons pop on select. */}
@@ -209,7 +219,7 @@ export function Hero() {
               );
             })}
           </div>
-          <div className="flex items-center gap-2 px-2 pt-3 text-xs text-[#2f4a34]"><ScanSearch className="size-3.5" /> Designed around a single clear field signal</div>
+          <div className="flex items-center gap-2 px-2 pt-3 text-xs text-[#2f4a34]"><ScanSearch className="size-3.5" /> {t("hero.widget.footer")}</div>
         </div>
       </div>
     </motion.section>
@@ -255,13 +265,14 @@ const TILE =
 const SEV_DOT = { low: "bg-severity-low", medium: "bg-severity-medium", high: "bg-severity-high" } as const;
 
 function LiveBadge() {
+  const { t } = useI18n();
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
       <span className="relative flex size-1.5">
         <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
         <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
       </span>
-      Live
+      {t("common.live")}
     </span>
   );
 }
@@ -273,7 +284,7 @@ export function Stats() {
   const { reports } = useData();
   const outbreaks = groupOutbreaks(reports);
   const sev = (s: "low" | "medium" | "high") => reports.filter((r) => r.diagnosis.severity === s).length;
-  const name = (r: (typeof reports)[number]) => r.diseaseTranslations?.[lang] ?? titleCase(r.diagnosis.disease);
+  const name = (r: (typeof reports)[number]) => diseaseName(r.diagnosis.disease, lang, r.diseaseTranslations?.[lang]);
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -293,12 +304,12 @@ export function Stats() {
             <div className="mb-3 flex gap-3 text-xs text-muted-foreground">
               {(["high", "medium", "low"] as const).map((s) => (
                 <span key={s} className="inline-flex items-center gap-1.5">
-                  <span className={cn("size-2 rounded-full", SEV_DOT[s])} /> {sev(s)} {s}
+                  <span className={cn("size-2 rounded-full", SEV_DOT[s])} /> {t(`stats.${s}`, { n: sev(s) })}
                 </span>
               ))}
             </div>
             {reports.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No reports yet.</p>
+              <p className="text-sm text-muted-foreground">{t("stats.noReports")}</p>
             ) : (
               <ul className="space-y-2">
                 {reports.slice(0, 3).map((r) => (
@@ -346,15 +357,15 @@ export function Stats() {
               <LiveBadge />
             </div>
             {outbreaks.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active outbreaks. Nearby reports are being watched.</p>
+              <p className="text-sm text-muted-foreground">{t("stats.noOutbreaks")}</p>
             ) : (
               <ul className="space-y-2">
                 {outbreaks.slice(0, 4).map((o) => (
                   <li key={o.key} className="rounded-lg border border-severity-high/25 bg-severity-high/10 px-3 py-2 text-sm">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{o.latest.diseaseTranslations?.[lang] ?? titleCase(o.disease)}</span>
+                      <span className="font-medium">{diseaseName(o.disease, lang, o.latest.diseaseTranslations?.[lang])}</span>
                       <span className="shrink-0 text-xs text-severity-high">
-                        {o.reports.length} reports{o.high ? ` · ${o.high} high` : ""}
+                        {t("stats.reports", { n: o.reports.length })}{o.high ? ` · ${t("stats.high", { n: o.high })}` : ""}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">{timeAgo(o.latest.timestamp, lang)}</p>
@@ -363,7 +374,7 @@ export function Stats() {
               </ul>
             )}
             <Link href="/alerts" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              Open alerts <ChevronRight className="size-4" />
+              {t("stats.openAlerts")} <ChevronRight className="size-4" />
             </Link>
           </MorphingPopoverContent>
         </MorphingPopover>
@@ -398,7 +409,7 @@ export function HowItWorks() {
       <div aria-hidden className="pointer-events-none absolute -bottom-24 -right-10 size-80 rounded-full bg-primary/20 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(47,107,58,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(47,107,58,0.15)_1px,transparent_1px)] [background-size:42px_42px]" />
       <div className="relative mb-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">Three simple steps</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">{t("how.eyebrow")}</p>
         <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#173d24]">{t("home.how")}</h2>
       </div>
       <div className="relative grid gap-4 md:grid-cols-3" onMouseLeave={() => setShown(false)}>

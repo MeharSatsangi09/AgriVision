@@ -7,6 +7,7 @@ import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-
 import { groupOutbreaks, useData, type Outbreak } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
+import { diseaseName } from "@/lib/diseases";
 import { timeAgo, titleCase } from "@/lib/format";
 
 const container = {
@@ -75,7 +76,7 @@ export default function AlertsView() {
 
 function AlertCard({ outbreak: o, isNew }: { outbreak: Outbreak; isNew: boolean }) {
   const { t, lang } = useI18n();
-  const name = o.latest.diseaseTranslations?.[lang] ?? titleCase(o.disease);
+  const name = diseaseName(o.disease, lang, o.latest.diseaseTranslations?.[lang]);
   return (
     <motion.li variants={item} className="overflow-hidden rounded-2xl border border-severity-high/30 bg-card shadow-sm">
       <div className="flex items-center gap-3 bg-severity-high/10 px-5 py-3 text-severity-high">

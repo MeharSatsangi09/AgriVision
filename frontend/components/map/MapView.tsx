@@ -6,6 +6,7 @@ import OutbreakMap from "@/components/map/OutbreakMap";
 import ResultPanel from "@/components/report/ResultPanel";
 import SeverityBadge from "@/components/report/SeverityBadge";
 import SampleBadge from "@/components/report/SampleBadge";
+import { diseaseName } from "@/lib/diseases";
 import { useData } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -49,7 +50,7 @@ export default function MapView() {
   }, [reports, severity, disease, period]);
   const selected = reports.find((r) => r.id === selectedId) ?? null;
 
-  const name = (r: Report) => r.diseaseTranslations?.[lang] ?? titleCase(r.diagnosis.disease);
+  const name = (r: Report) => diseaseName(r.diagnosis.disease, lang, r.diseaseTranslations?.[lang]);
 
   return (
     <div className="space-y-5">
@@ -80,7 +81,7 @@ export default function MapView() {
             <option value="all">{t("map.all")}</option>
             {diseases.map((d) => (
               <option key={d} value={d}>
-                {titleCase(d)}
+                {diseaseName(d, lang)}
               </option>
             ))}
           </select>

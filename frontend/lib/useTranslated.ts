@@ -1,4 +1,5 @@
 "use client";
+import { diseaseName } from "@/lib/diseases";
 import { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/lib/firebase";
@@ -61,10 +62,10 @@ export function useTranslated(report: Report, lang: string) {
   const english = lang === "en";
   return {
     advisory: english ? report.advisory : t?.advisory || report.advisory,
-    disease: english ? titleCase(report.diagnosis.disease) : t?.disease || titleCase(report.diagnosis.disease),
+    disease: diseaseName(report.diagnosis.disease, lang, t?.disease),
     followUp: english ? report.diagnosis.followUp : t?.followUp || report.diagnosis.followUp,
     regenerativeTip: english ? report.regenerativeTip : t?.regenerativeTip || report.regenerativeTip,
-    reconciliationDiagnosis: english ? report.reconciliation?.finalDiagnosis : t?.reconciliationDiagnosis || report.reconciliation?.finalDiagnosis,
+    reconciliationDiagnosis: report.reconciliation ? diseaseName(report.reconciliation.finalDiagnosis, lang, t?.reconciliationDiagnosis) : undefined,
     reconciliationReasoning: english ? report.reconciliation?.reasoning : t?.reconciliationReasoning || report.reconciliation?.reasoning,
     status: english || t?.advisory ? ("ok" as const) : failedKey === key ? ("error" as const) : ("loading" as const),
   };
