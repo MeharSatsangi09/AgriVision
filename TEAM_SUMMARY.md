@@ -1,6 +1,6 @@
 # AgriVision — Team Summary
 
-*Status as of 2026-09-25 (late).*
+*Status as of 2026-09-25.*
 
 ## 1. What AgriVision is
 
@@ -31,17 +31,9 @@ Extension officers and policymakers are the second audience. The same reports, g
 - **Nine languages.** The whole interface and each report can be read in English, Hindi, Marathi, Tamil, Telugu, Bengali, Gujarati, Kannada and Punjabi. Report text is translated when someone asks for it and then saved, so it isn't translated twice.
 - **Data for researchers.** The public `/data` page and its JSON endpoint (`/api/regional-data`) roll reports up by state: report counts, active outbreaks and top diseases. It is in English only, since it is aimed at researchers and policymakers.
 
-### New since the last update
-
-- **Phone login.** Uploading a photo and viewing the Alerts page need a phone-number login (an SMS code). The map, data page and report pages stay open. A phone number is never stored on a report.
-- **My Reports and Profile.** A user icon in the header opens a menu: Profile (name and place, private to the owner, shown in the language you picked), My Reports (only your own uploads) and Log out.
-- **Community reports.** The Reports box on the diagnose page shows the three newest reports, and `/reports` lists all of them with a disease search. Uploaders appear under generated names that cannot be linked to a person.
-- **Weather.** A header pill opens a card with today's hourly forecast and the next 7 days (Open-Meteo). The whole site takes on the current weather: rain lands on the cards and drips off them, the sun leaves a soft reflection on card corners, and there is fog, snow and thunder. A preview row in the card lets you show any weather on demand; it is meant to be removed after the demo.
-- **Languages.** The diagnose page, the state list and disease names are translated in all 9 languages. Names and places on the profile are converted to your language by an AI model, which depends on the shared Gemini quota.
-
 ### Look and feel (polish phase)
 
-Smooth scrolling, animated cards, a full-screen landing sequence (four scenes with a moving AgriVision wordmark), a magnifying navigation dock, a custom language menu, phone-number login for uploads and alerts, a frosted-glass upload card, click-to-expand Reports and Active outbreaks tiles that update live, and a green theme throughout. The live data currently holds three reports: a real Late Blight upload from a teammate, a real Black Spot upload made through the phone login, and an earlier Black Spot report that shows the full feature set (our classifier, the referee, advice, regenerative tip and satellite data).
+Smooth scrolling, animated cards, a full-screen landing sequence (four scenes with a moving AgriVision wordmark), a magnifying navigation dock, a custom language menu, phone-number login for uploads and alerts, a frosted-glass upload card, click-to-expand Reports and Active outbreaks tiles that update live, and a green theme throughout. The live data currently holds just two reports: a real Late Blight upload from a teammate, and an earlier Black Spot report that shows the full feature set (our classifier, the referee, advice, regenerative tip and satellite data).
 
 ### Build history by phase
 
@@ -54,7 +46,6 @@ Smooth scrolling, animated cards, a full-screen landing sequence (four scenes wi
 | 2.7 | Reconciliation agent and follow-up agent | Done |
 | 3 | Animation and UI polish | In progress (demo rehearsal and pitch deck still to do) |
 | 3.5 | Interoperability page, satellite data, voice input, weather-aware advice, regenerative tip, soil data | Done |
-| 3.6 | Phone login, My Reports, profile, community feed, language sweep, weather | Done |
 | 4 | Buffer, final deploy check, submission | Not started |
 
 ## 3. What's live
@@ -62,12 +53,12 @@ Smooth scrolling, animated cards, a full-screen landing sequence (four scenes wi
 | Part | Where |
 |---|---|
 | Website (Vercel) | https://agrivision-silk-psi.vercel.app |
-| Main pages | `/` (landing), `/diagnose`, `/map`, `/reports`, `/alerts` (login), `/my-reports` (login), `/profile` (login), `/login`, `/report/<id>`, `/data` |
+| Main pages | `/` (landing), `/diagnose`, `/map`, `/alerts`, `/report/<id>`, `/data` |
 | Regional data (JSON) | https://agrivision-silk-psi.vercel.app/api/regional-data |
 | Backend (Firebase project `agrivision-768d1`, region asia-south1) | Cloud Functions. They are not opened directly. The website calls them when a photo is uploaded, when a report is translated, when a question is asked or spoken, and on an hourly outbreak check. |
 | Code | https://github.com/MeharSatsangi09/AgriVision |
 
-Backend functions currently deployed: `processUpload` (the photo pipeline), `scheduledTrendCheck` (hourly outbreak check), `translateReport`, `translateUi`, `askFollowUpQuestion`, `transcribeSpeech` and `translateProfile`.
+Backend functions currently deployed: `processUpload` (the photo pipeline), `scheduledTrendCheck` (hourly outbreak check), `translateReport`, `translateUi`, `askFollowUpQuestion` and `transcribeSpeech`.
 
 **How updates go live:** the website redeploys by itself when someone pushes to `main`. The backend does not. Run `firebase deploy --only functions` from the repo after changing anything in `/functions`.
 
@@ -75,7 +66,7 @@ Backend functions currently deployed: `processUpload` (the photo pipeline), `sch
 
 - **Our classifier can be confidently wrong.** It only knows 38 PlantVillage disease types, from lab-style single-leaf photos. On real field photos it did much worse: on 19 photos outside that dataset it was confidently wrong on 5. The app shows Gemini's answer as the main one, and marks the classifier as uncertain when it is unsure or disagrees. In the pitch, say "97% on PlantVillage's test split, expect lower on real field photos". This is open item #3 in `refinement.md`.
 - **Regions on `/data` are approximate.** A report is assigned to the nearest state centre, not by real borders, so near a boundary it can land in the neighbouring state. The page says so. It caught two of our test points (Nagpur and Belagavi) when we first built demo data. It only affects the regional rollup, not diagnosis or map pins.
-- **Gemini free-tier limit.** About 5 requests a minute and 20 a day per model, roughly 5 uploads a day; name conversion on the profile shares it. This limits testing and demos. The options are a paid tier or moving to Vertex AI.
+- **Gemini free-tier limit.** About 20 requests a day per model, roughly 5 uploads. This limits testing and demos. The options are a paid tier or moving to Vertex AI.
 - **Translations are AI-written** and have not been reviewed by native speakers.
 - **Phone login (new).** Uploading a photo and viewing the Alerts page need a phone-number login (SMS code). The map, the data page and report pages stay open, and reports are public. Locations are rounded to about 1 km for privacy, and the phone number is never stored in a report. Before the demo, check that a real login works from the live site; real Indian numbers also need India enabled in Firebase's SMS region settings (test numbers work without it).
 - **Slow start.** The first upload after a quiet period can take 45–60 seconds. The upload function keeps one instance warm to help.
