@@ -8,7 +8,8 @@ import type { WeatherKind } from "@/lib/weather";
 //  - Rain falls in depth layers. The far layer lives on the sky canvas behind the cards; this canvas holds the middle layer
 //    (drops that hit card tops, splash and deflect, some stay as beads on the top edge, slide to a corner, run down the
 //    card's side edge, hang from the bottom and drip off) and a few big near drops that streak past in front.
-//  - Sun paints a warm glossy glint that sweeps across the cards, plus a bright hotspot toward the sun.
+//  - Sun adds a subtle warm reflection on each card's top-right corner; it strengthens as a card nears the sun at the top-right
+//    of the page, so the light moves from card to card as the page scrolls.
 //  - Snow lands on card tops and settles for a few seconds.
 //  - Thunderstorms flash the whole page softly when the sky canvas strikes.
 // Off entirely when the OS asks for reduced motion.
@@ -387,37 +388,48 @@ function OverlayCanvas({ kind, sunny, wind }: { kind: WeatherKind; sunny: boolea
         ctx.stroke();
       }
 
-      // ---- sun: glossy glint sweeping over the cards + a hotspot toward the sun (top right) ---------------------
+      // ---- sun: a subtle warm reflection on each card's top-right corner (the sun sits at the top-right of the page) ----
+      // The closer a card's top-right corner is to the sun, the stronger its reflection, so as the page scrolls the light
+      // moves from card to card: cards passing near the top-right light up, cards further down stay calm.
       if (sunny) {
-        const phase = ((time % 11) / 11) * (W + H * 0.5 + 500) - 250; // x position of the sweep, one pass every 11 s
+        const sunX = W * 0.9;
+        const sunY = -H * 0.06;
+        const reach = Math.max(500, H * 1.05);
         for (const s of surfs) {
+          const cx = s.r - Math.min(40, s.w * 0.08);
+          const cy = s.t + Math.min(30, s.h * 0.1);
+          const k = 1 - Math.hypot(cx - sunX, cy - sunY) / reach;
+          if (k <= 0) continue;
+          const power = k * k; // 0..1, falls off quickly with distance from the sun
           ctx.save();
           rr(s.l, s.t, s.w, s.h, 16);
           ctx.clip();
-          // warm hotspot near the card's top-right corner
-          const hr = Math.max(60, Math.min(s.w, s.h) * 0.9);
-          const hg = ctx.createRadialGradient(s.r - s.w * 0.08, s.t + s.h * 0.06, 0, s.r - s.w * 0.08, s.t + s.h * 0.06, hr);
-          hg.addColorStop(0, "rgba(255,220,110,0.34)");
-          hg.addColorStop(1, "rgba(255,220,110,0)");
+          const hr = Math.max(70, Math.min(s.w, s.h) * 0.85);
+          const hg = ctx.createRadialGradient(cx, cy, 0, cx, cy, hr);
+          hg.addColorStop(0, `rgba(255,222,120,${0.2 * power})`);
+          hg.addColorStop(1, "rgba(255,222,120,0)");
           ctx.fillStyle = hg;
           ctx.fillRect(s.l, s.t, s.w, s.h);
-          // glossy sweep: warm edges, bright core, tilted like a reflection on glass
-          const sx = phase - s.t * 0.36;
-          const g = ctx.createLinearGradient(sx - 90, 0, sx + 90, 0);
-          g.addColorStop(0, "rgba(255,214,100,0)");
-          g.addColorStop(0.35, "rgba(255,214,100,0.22)");
-          g.addColorStop(0.5, "rgba(255,255,255,0.5)");
-          g.addColorStop(0.65, "rgba(255,214,100,0.22)");
-          g.addColorStop(1, "rgba(255,214,100,0)");
-          ctx.fillStyle = g;
-          ctx.fillRect(s.l, s.t, s.w, s.h);
           ctx.restore();
-          // bright rim on the sun-facing top edge
-          ctx.strokeStyle = "rgba(255,244,190,0.7)";
-          ctx.lineWidth = 1.5;
+          // thin light along the top edge and down the right edge, fading away from the corner
+          const runX = Math.min(150, s.w * 0.5);
+          const runY = Math.min(90, s.h * 0.6);
+          const top = ctx.createLinearGradient(s.r - runX, 0, s.r - 10, 0);
+          top.addColorStop(0, "rgba(255,240,180,0)");
+          top.addColorStop(1, `rgba(255,240,180,${0.42 * power})`);
+          ctx.strokeStyle = top;
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.moveTo(s.l + 16, s.t + 0.5);
-          ctx.lineTo(s.r - 16, s.t + 0.5);
+          ctx.moveTo(s.r - runX, s.t + 0.5);
+          ctx.lineTo(s.r - 12, s.t + 0.5);
+          ctx.stroke();
+          const right = ctx.createLinearGradient(0, s.t + 12, 0, s.t + runY);
+          right.addColorStop(0, `rgba(255,240,180,${0.36 * power})`);
+          right.addColorStop(1, "rgba(255,240,180,0)");
+          ctx.strokeStyle = right;
+          ctx.beginPath();
+          ctx.moveTo(s.r - 0.5, s.t + 12);
+          ctx.lineTo(s.r - 0.5, s.t + runY);
           ctx.stroke();
         }
       }

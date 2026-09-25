@@ -88,10 +88,12 @@ export function MorphingPopoverContent({
   className,
   radius = 16,
   closeOnContentClick = true,
+  style,
 }: {
   children: ReactNode;
   className?: string;
   radius?: number;
+  style?: React.CSSProperties; // extra inline placement/size
   closeOnContentClick?: boolean; // false for panels with their own controls (the panel then closes via its own button, Esc or an outside click)
 }) {
   const { open, setOpen, uniqueId, variants } = usePopover();
@@ -104,7 +106,7 @@ export function MorphingPopoverContent({
           role="dialog"
           data-lenis-prevent
           onClick={closeOnContentClick ? (e) => !(e.target as HTMLElement).closest("a") && setOpen(false) : undefined}
-          style={{ borderRadius: radius }}
+          style={{ borderRadius: radius, ...style }}
           initial={variants?.initial}
           animate={variants?.animate}
           exit={variants?.exit}

@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudRainWind, CloudSnow, CloudSun, Loader2, Moon, Sun, X, Droplets, Thermometer, Wind } from "lucide-react";
 import { MorphingPopover, MorphingPopoverContent, MorphingPopoverTrigger, usePopoverClose } from "@/components/core/morphing-popover";
 import { useWeather } from "@/lib/WeatherProvider";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { LOCALES, type Condition, type WeatherKind } from "@/lib/weather";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ const PREVIEWS: { id: string; c: Condition; key: string }[] = [
 // every kind of weather can be shown on demand (for a demo, or when it is sunny outside).
 export default function WeatherButton() {
   const { t, lang } = useI18n();
+  const wide = useMediaQuery("(min-width: 640px)");
   const { weather, status, usingDefault, condition, preview, setPreview, reload } = useWeather();
   const locale = LOCALES[lang] ?? "en-IN";
   const hourFmt = useMemo(() => new Intl.DateTimeFormat(locale, { hour: "numeric" }), [locale]);
@@ -53,7 +55,7 @@ export default function WeatherButton() {
   const cur = weather?.current;
 
   return (
-    <MorphingPopover className="static sm:relative">
+    <MorphingPopover className={wide ? "relative" : "static"}>
       <MorphingPopoverTrigger
         radius={20}
         className="flex h-10 items-center gap-1.5 rounded-full border border-primary/15 bg-white/60 px-3 text-sm font-medium text-primary shadow-sm backdrop-blur-md transition-all duration-300 hover:border-primary/60 hover:bg-primary/10 hover:shadow-[0_0_18px_4px_rgba(47,107,58,0.4)]"
@@ -66,7 +68,10 @@ export default function WeatherButton() {
       <MorphingPopoverContent
         radius={20}
         closeOnContentClick={false}
-        className="left-3 right-3 top-[3.75rem] max-h-[calc(100dvh-4.5rem)] overflow-y-auto bg-gradient-to-br from-[#e3f3d6] via-white to-[#eef7e8] p-4 sm:left-auto sm:right-0 sm:top-0 sm:w-[25rem]"
+        // Placement is inline (not responsive classes) so it can never fall back to the phone layout on a wide screen:
+        // wide = a 25rem card pinned under the pill; narrow = a card spanning the screen under the header.
+        style={wide ? { left: "auto", right: 0, top: 0, width: "23rem", maxHeight: "calc(100dvh - 5rem)" } : { left: 12, right: 12, top: 60, maxHeight: "calc(100dvh - 4.5rem)" }}
+        className="overflow-y-auto bg-gradient-to-br from-[#e3f3d6] via-white to-[#eef7e8] p-3.5"
       >
         <PopoverClose label={t("common.close")} />
 
@@ -82,18 +87,18 @@ export default function WeatherButton() {
             <Loader2 className="size-4 animate-spin" /> {t("weather.loading")}
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {/* now */}
             <div>
               <p className="pr-8 text-xs text-muted-foreground">{usingDefault ? t("weather.locDefault") : t("weather.locYours")}</p>
               <div className="mt-1 flex items-center gap-3">
-                <Now className={cn("size-12 shrink-0", tone(shown.kind, shown.isDay))} aria-hidden />
+                <Now className={cn("size-10 shrink-0", tone(shown.kind, shown.isDay))} aria-hidden />
                 <div>
-                  <div className="text-4xl font-semibold leading-none tracking-tight">{deg(cur.temp)}C</div>
+                  <div className="text-3xl font-semibold leading-none tracking-tight">{deg(cur.temp)}C</div>
                   <div className="mt-1 text-sm text-muted-foreground">{label(cur.condition)}</div>
                 </div>
               </div>
-              <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
+              <dl className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
                 <Stat icon={Thermometer} label={t("weather.feels")} value={deg(cur.feels)} />
                 <Stat icon={Droplets} label={t("weather.humidity")} value={`${Math.round(cur.humidity)}%`} />
                 <Stat icon={Wind} label={t("weather.wind")} value={`${Math.round(cur.wind)} km/h`} />
@@ -103,12 +108,12 @@ export default function WeatherButton() {
             {/* today, hour by hour */}
             {weather.hours.length > 0 && (
               <section>
-                <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.today")}</h3>
+                <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.today")}</h3>
                 <ul data-lenis-prevent className="flex gap-1.5 overflow-x-auto pb-1.5 [scrollbar-width:thin]">
                   {weather.hours.map((h, i) => {
                     const I = iconFor(h.condition.kind, h.condition.isDay);
                     return (
-                      <li key={h.time} className="flex w-14 shrink-0 flex-col items-center gap-0.5 rounded-xl bg-white/70 px-1 py-2 text-center">
+                      <li key={h.time} className="flex w-12 shrink-0 flex-col items-center gap-0 rounded-xl bg-white/70 px-1 py-1 text-center">
                         <span className="text-[11px] text-muted-foreground">{i === 0 ? t("weather.now") : hourFmt.format(new Date(h.time))}</span>
                         <I className={cn("size-5", tone(h.condition.kind, h.condition.isDay))} aria-hidden />
                         <span className="text-sm font-medium tabular-nums">{deg(h.temp)}</span>
@@ -122,12 +127,12 @@ export default function WeatherButton() {
 
             {/* next 7 days */}
             <section>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.week")}</h3>
-              <ul className="space-y-1">
+              <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.week")}</h3>
+              <ul className="space-y-0.5">
                 {weather.days.map((d, i) => {
                   const I = iconFor(d.kind, true);
                   return (
-                    <li key={d.date} className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-1.5 text-sm">
+                    <li key={d.date} className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-0.5 text-[13px]">
                       <span className="w-20 shrink-0 truncate">{i === 0 ? t("weather.todayShort") : i === 1 ? t("weather.tomorrow") : dayFmt.format(new Date(`${d.date}T00:00`))}</span>
                       <I className={cn("size-5 shrink-0", tone(d.kind, true))} aria-hidden />
                       <span className="w-10 shrink-0 text-xs tabular-nums text-sky-600">{Math.round(d.rainChance)}%</span>
@@ -142,7 +147,7 @@ export default function WeatherButton() {
 
             {/* preview the site effects */}
             <section>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.preview")}</h3>
+              <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("weather.preview")}</h3>
               <div className="flex flex-wrap gap-1.5">
                 <Chip active={!preview} onClick={() => setPreview(null)}>{t("weather.previewLive")}</Chip>
                 {PREVIEWS.map((p) => (
@@ -163,7 +168,7 @@ export default function WeatherButton() {
 
 function Stat({ icon: I, label, value }: { icon: Icon | typeof Thermometer; label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white/70 px-2 py-1.5">
+    <div className="rounded-xl bg-white/70 px-2 py-1">
       <dt className="flex items-center gap-1 text-muted-foreground"><I className="size-3" aria-hidden /> {label}</dt>
       <dd className="mt-0.5 text-sm font-medium tabular-nums">{value}</dd>
     </div>
@@ -176,7 +181,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+        "rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
         active ? "border-primary bg-primary text-primary-foreground" : "border-primary/20 bg-white/70 text-primary hover:bg-primary/10"
       )}
     >
