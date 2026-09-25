@@ -66,7 +66,7 @@ export function MorphingPopover({
   );
 }
 
-export function MorphingPopoverTrigger({ children, className }: { children: ReactNode; className?: string }) {
+export function MorphingPopoverTrigger({ children, className, radius = 16 }: { children: ReactNode; className?: string; radius?: number }) {
   const { open, setOpen, uniqueId } = usePopover();
   return (
     <motion.button
@@ -75,7 +75,7 @@ export function MorphingPopoverTrigger({ children, className }: { children: Reac
       layoutId={`popover-trigger-${uniqueId}`}
       onClick={() => setOpen(!open)}
       aria-expanded={open}
-      style={{ borderRadius: 16 }}
+      style={{ borderRadius: radius }}
       className={cn("block w-full text-left", className)}
     >
       {children}
@@ -83,7 +83,17 @@ export function MorphingPopoverTrigger({ children, className }: { children: Reac
   );
 }
 
-export function MorphingPopoverContent({ children, className }: { children: ReactNode; className?: string }) {
+export function MorphingPopoverContent({
+  children,
+  className,
+  radius = 16,
+  closeOnContentClick = true,
+}: {
+  children: ReactNode;
+  className?: string;
+  radius?: number;
+  closeOnContentClick?: boolean; // false for panels with their own controls (the panel then closes via its own button, Esc or an outside click)
+}) {
   const { open, setOpen, uniqueId, variants } = usePopover();
   return (
     <AnimatePresence>
@@ -92,16 +102,23 @@ export function MorphingPopoverContent({ children, className }: { children: Reac
           layoutId={`popover-trigger-${uniqueId}`}
           key={`content-${uniqueId}`}
           role="dialog"
-          onClick={(e) => !(e.target as HTMLElement).closest("a") && setOpen(false)}
-          style={{ borderRadius: 16 }}
+          data-lenis-prevent
+          onClick={closeOnContentClick ? (e) => !(e.target as HTMLElement).closest("a") && setOpen(false) : undefined}
+          style={{ borderRadius: radius }}
           initial={variants?.initial}
           animate={variants?.animate}
           exit={variants?.exit}
-          className={cn("absolute left-0 top-0 z-50 cursor-pointer overflow-hidden border bg-card text-card-foreground shadow-lg", className)}
+          className={cn("absolute left-0 top-0 z-50 overflow-hidden border bg-card text-card-foreground shadow-lg", closeOnContentClick && "cursor-pointer", className)}
         >
           {children}
         </motion.div>
       )}
     </AnimatePresence>
   );
+}
+
+// For panels that carry their own close button.
+export function usePopoverClose() {
+  const { setOpen } = usePopover();
+  return () => setOpen(false);
 }

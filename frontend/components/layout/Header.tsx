@@ -13,6 +13,7 @@ import { AnimatedBackground } from "@/components/core/animated-background";
 import { Dock, DockIcon, DockItem, DockLabel } from "@/components/core/dock";
 import LanguageMenu from "@/components/layout/LanguageMenu";
 import UserMenu from "@/components/layout/UserMenu";
+import WeatherButton from "@/components/weather/WeatherButton";
 
 const NAV = [
   { href: "/diagnose", key: "nav.diagnose" },
@@ -112,6 +113,7 @@ export default function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <LanguageMenu />
+          <WeatherButton />
           <UserMenu />
 
           <button

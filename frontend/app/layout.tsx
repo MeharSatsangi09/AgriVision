@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { DataProvider } from "@/lib/data";
 import { AuthProvider } from "@/lib/auth";
+import { WeatherProvider } from "@/lib/WeatherProvider";
+import WeatherBackdrop from "@/components/weather/WeatherBackdrop";
 import { SeenProvider } from "@/lib/seen";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -24,10 +26,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <DataProvider>
             <AuthProvider>
             <SeenProvider>
+            <WeatherProvider>
+              <WeatherBackdrop />
               <SmoothScroll />
               <Header />
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-              <Footer />
+              <main className="relative z-[1] mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+              <div className="relative z-[1]">
+                <Footer />
+              </div>
+            </WeatherProvider>
             </SeenProvider>
             </AuthProvider>
           </DataProvider>
