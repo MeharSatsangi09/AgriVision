@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useWeather } from "@/lib/WeatherProvider";
+import WeatherOverlay from "@/components/weather/WeatherOverlay";
 import type { Condition, WeatherKind } from "@/lib/weather";
 
 // Full-page weather scene behind all content ("the canvas"): a sky gradient for the current weather plus animated
@@ -57,6 +58,7 @@ export default function WeatherBackdrop() {
   const wind = weather?.windSpeed ?? 8;
 
   return (
+    <>
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <AnimatePresence>
         <motion.div
@@ -72,6 +74,9 @@ export default function WeatherBackdrop() {
         </motion.div>
       </AnimatePresence>
     </div>
+    {/* the part of the weather that touches the cards (drops landing and dripping, sun glint) lives above them */}
+    <WeatherOverlay kind={condition.kind} isDay={condition.isDay} wind={wind} />
+    </>
   );
 }
 
@@ -193,7 +198,7 @@ function PrecipCanvas({ kind, wind }: { kind: WeatherKind; wind: number }) {
 
     const snow = kind === "snow";
     const factor = DROP_FACTOR[kind] ?? 1;
-    const count = snow ? 90 : Math.round(Math.min(260, Math.max(70, (w * h) / 8000)) * factor);
+    const count = snow ? 40 : Math.round(Math.min(200, Math.max(60, (w * h) / 9000)) * factor * 0.8); // far layer only; nearer drops are on the overlay canvas
     const slant = Math.min(0.32, 0.06 + wind / 130); // horizontal lean of falling rain from the wind
     const drops: Drop[] = [];
     const flakes: Flake[] = [];
@@ -217,6 +222,7 @@ function PrecipCanvas({ kind, wind }: { kind: WeatherKind; wind: number }) {
         pts.push([x, y]);
       }
       bolt = { pts, born: now };
+      window.dispatchEvent(new Event("weather-strike")); // the overlay flashes the cards too
       flashAt = [now, now + 130];
       nextStrike = now + 6000 + Math.random() * 8000;
     };
