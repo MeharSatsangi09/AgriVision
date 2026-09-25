@@ -33,7 +33,7 @@ Extension officers and policymakers are the second audience. The same reports, g
 
 ### Look and feel (polish phase)
 
-Smooth scrolling, animated cards, a full-screen landing sequence (four scenes with a moving AgriVision wordmark), a magnifying navigation dock, a custom language menu, a frosted-glass upload card, click-to-expand Reports and Active outbreaks tiles that update live, and a green theme throughout. The live data currently holds just two reports: a real Late Blight upload from a teammate, and an earlier Black Spot report that shows the full feature set (our classifier, the referee, advice, regenerative tip and satellite data).
+Smooth scrolling, animated cards, a full-screen landing sequence (four scenes with a moving AgriVision wordmark), a magnifying navigation dock, a custom language menu, phone-number login for uploads and alerts, a frosted-glass upload card, click-to-expand Reports and Active outbreaks tiles that update live, and a green theme throughout. The live data currently holds just two reports: a real Late Blight upload from a teammate, and an earlier Black Spot report that shows the full feature set (our classifier, the referee, advice, regenerative tip and satellite data).
 
 ### Build history by phase
 
@@ -68,7 +68,7 @@ Backend functions currently deployed: `processUpload` (the photo pipeline), `sch
 - **Regions on `/data` are approximate.** A report is assigned to the nearest state centre, not by real borders, so near a boundary it can land in the neighbouring state. The page says so. It caught two of our test points (Nagpur and Belagavi) when we first built demo data. It only affects the regional rollup, not diagnosis or map pins.
 - **Gemini free-tier limit.** About 20 requests a day per model, roughly 5 uploads. This limits testing and demos. The options are a paid tier or moving to Vertex AI.
 - **Translations are AI-written** and have not been reviewed by native speakers.
-- **No sign-in yet.** Uploads need no account, and reports are public. Locations are rounded to about 1 km for privacy. A phone-number (OTP) login is logged as open item #12 in `refinement.md`, with the open question of what should sit behind it.
+- **Phone login (new).** Uploading a photo and viewing the Alerts page need a phone-number login (SMS code). The map, the data page and report pages stay open, and reports are public. Locations are rounded to about 1 km for privacy, and the phone number is never stored in a report. Before the demo, check that a real login works from the live site; real Indian numbers also need India enabled in Firebase's SMS region settings (test numbers work without it).
 - **Slow start.** The first upload after a quiet period can take 45–60 seconds. The upload function keeps one instance warm to help.
 - **Cleanup owed.** Two leftover local git worktree folders (`review-wt`, `hackthon-review`) still need deleting by hand.
 

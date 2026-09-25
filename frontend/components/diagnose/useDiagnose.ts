@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { ref, uploadBytes } from "firebase/storage";
-import { isDemoMode, storage } from "@/lib/firebase";
+import { auth, isDemoMode, storage } from "@/lib/firebase";
 import { useData } from "@/lib/data";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { compressImage } from "@/lib/image";
@@ -27,6 +27,13 @@ export function useDiagnose() {
         setPhase("error");
         return;
       }
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        // The upload card is only shown to logged-in users, so this means the session just ended.
+        setError(t("err.upload"));
+        setPhase("error");
+        return;
+      }
       setPhase("uploading");
       try {
         const body = await compressImage(file);
@@ -34,7 +41,7 @@ export function useDiagnose() {
         await uploadBytes(ref(storage, p), body, {
           contentType: body.type,
           // Rounded to ~1 km: a farm's exact position is never stored.
-          customMetadata: { lat: String(roundCoord(loc.lat)), lng: String(roundCoord(loc.lng)) },
+          customMetadata: { lat: String(roundCoord(loc.lat)), lng: String(roundCoord(loc.lng)), uid }, // uid = owner for My Reports (storage.rules require it to equal the uploader's own uid)
         });
         setPath(p);
         setPhase("analyzing");

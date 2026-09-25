@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, X } from "lucide-react";
+import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { useAuth } from "@/lib/auth";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/core/animated-background";
 import { Dock, DockIcon, DockItem, DockLabel } from "@/components/core/dock";
 import LanguageMenu from "@/components/layout/LanguageMenu";
+import UserMenu from "@/components/layout/UserMenu";
 
 const NAV = [
   { href: "/diagnose", key: "nav.diagnose" },
@@ -111,16 +112,7 @@ export default function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <LanguageMenu />
-          {user && (
-            <button
-              type="button"
-              onClick={() => logout()}
-              title={user.phoneNumber ?? undefined}
-              className="hidden items-center gap-1.5 rounded-full border border-primary/15 bg-white/60 px-3.5 py-2 text-sm font-medium text-primary shadow-sm backdrop-blur-md transition-colors hover:bg-primary/10 sm:inline-flex"
-            >
-              <LogOut className="size-4" aria-hidden /> {t("auth.logout")}
-            </button>
-          )}
+          <UserMenu />
 
           <button
             type="button"
@@ -195,6 +187,11 @@ export default function Header() {
                   ))}
                 </select>
               </label>
+              {user && (
+                <Link href="/my-reports" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                  <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
+                </Link>
+              )}
               {user && (
                 <button
                   type="button"

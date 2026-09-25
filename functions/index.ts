@@ -12,6 +12,7 @@ import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
 import { inIndia } from "./tools/india";
 import { transcribeAudio } from "./tools/speechTool";
+import { uploaderUid } from "./tools/uploader";
 
 initializeApp();
 
@@ -34,6 +35,7 @@ export const processUpload = onObjectFinalized(
 
     const lat = Number(metadata?.lat);
     const lng = Number(metadata?.lng);
+    const uid = uploaderUid(metadata); // owner for "My Reports"; the uid only, never the phone number
     // Server-side guard (the UI checks too): don't spend Gemini quota on points outside India.
     if (!inIndia(lat, lng)) return recordFailure(name, "location");
 
@@ -74,6 +76,7 @@ export const processUpload = onObjectFinalized(
         ...(reconciliation ? { reconciliation } : {}),
         ...(satelliteData ? { satelliteData } : {}),
         ...(soilHealth ? { soilHealth } : {}),
+        ...(uid ? { uid } : {}),
       });
     } catch (err) {
       console.error("processUpload failed:", err);

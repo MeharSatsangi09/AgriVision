@@ -30,6 +30,7 @@ export interface ReportInput {
   reconciliation?: Reconciliation; // Reconciliation Agent's adjudicated answer (Agent 4)
   satelliteData?: SatelliteData; // Earth Engine vegetation-index signal for the report's location
   soilHealth?: SoilHealth; // ISRIC SoilGrids organic carbon + pH for the report's location
+  uid?: string; // Firebase Auth uid of the logged-in uploader (from upload metadata); powers "My Reports". Never a phone number.
 }
 
 // Plain function: called deterministically by the Cloud Function after the pipeline runs.

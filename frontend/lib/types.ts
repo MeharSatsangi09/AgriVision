@@ -16,6 +16,7 @@ export interface Report {
   advisory: string;
   regenerativeTip?: string; // one low-cost/no-chemical practice tied to the diagnosis, from the Advisory Agent
   alert?: boolean;
+  uid?: string; // Firebase Auth uid of the logged-in uploader (never a phone number); reports made before login was added have none
   isSeeded?: boolean; // true for demo/seeded or hand-edited reports, not a genuine farmer diagnosis: shown with a "Sample data" badge
   alertReason?: string;
   advisoryTranslations?: Record<string, string>;
