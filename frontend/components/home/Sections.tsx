@@ -7,6 +7,7 @@ import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-
 import { MorphingPopover, MorphingPopoverContent, MorphingPopoverTrigger } from "@/components/core/morphing-popover";
 import { Spotlight } from "@/components/core/spotlight";
 import { timeAgo, titleCase } from "@/lib/format";
+import { reportUsername } from "@/lib/username";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { groupOutbreaks, useData } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
@@ -299,19 +300,34 @@ export function Stats() {
             {reports.length === 0 ? (
               <p className="text-sm text-muted-foreground">No reports yet.</p>
             ) : (
-              <ul className="space-y-1.5">
-                {reports.slice(0, 5).map((r) => (
-                  <li key={r.id} className="flex items-center gap-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-sm">
-                    <span className={cn("size-2 shrink-0 rounded-full", SEV_DOT[r.diagnosis.severity])} />
-                    <span className="min-w-0 flex-1 truncate">{name(r)}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(r.timestamp, lang)}</span>
+              <ul className="space-y-2">
+                {reports.slice(0, 3).map((r) => (
+                  <li key={r.id}>
+                    <Link href={`/report/${r.id}`} className="flex items-center gap-3 rounded-xl bg-white/60 p-2 text-sm transition-colors hover:bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={r.photoUrl} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5">
+                          <span className={cn("size-2 shrink-0 rounded-full", SEV_DOT[r.diagnosis.severity])} />
+                          <span className="truncate font-medium">{name(r)}</span>
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {t("reports.by")} {reportUsername(r.id)} · {timeAgo(r.timestamp, lang)}
+                        </span>
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
             )}
-            <Link href="/map" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              View on map <ChevronRight className="size-4" />
-            </Link>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <Link href="/reports" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                {t("reports.viewAll")} <ChevronRight className="size-4" />
+              </Link>
+              <Link href="/map" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary hover:underline">
+                <MapPin className="size-3" /> {t("nav.map")}
+              </Link>
+            </div>
           </MorphingPopoverContent>
         </MorphingPopover>
       </motion.div>
