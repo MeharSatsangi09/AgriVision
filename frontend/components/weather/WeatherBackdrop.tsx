@@ -96,7 +96,7 @@ function Scene({ condition, wind, reduced }: { condition: Condition; wind: numbe
   return (
     <>
       {sunny && <SunGlow reduced={reduced} strong={kind === "clear"} />}
-      {moon && <MoonGlow />}
+      {moon && <MoonGlow reduced={reduced} />}
       {(kind === "clear" || kind === "partly") && !isDay && <Stars reduced={reduced} sparse={kind === "partly"} />}
       {(kind === "partly" || grey || kind === "snow") && (
         <Clouds tone={isDay ? (kind === "thunder" || kind === "showers" ? "dark" : grey ? "grey" : "white") : "night"} count={kind === "partly" ? 3 : 5} reduced={reduced} />
@@ -238,18 +238,15 @@ function Stars({ reduced, sparse }: { reduced: boolean; sparse: boolean }) {
   return <canvas ref={ref} className="absolute inset-0 size-full" />;
 }
 
-function MoonGlow() {
+// Same idea as the sun: a soft glow spilling in from the top-right corner (no disc), in cool moonlight instead of gold.
+function MoonGlow({ reduced }: { reduced: boolean }) {
   return (
-    <>
-      <div
-        className="absolute -right-24 -top-24 size-[30rem] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(200,220,255,0.28) 0%, rgba(170,195,240,0.12) 38%, rgba(170,195,240,0) 68%)" }}
-      />
-      <div
-        className="absolute right-[9%] top-[9%] size-14 rounded-full"
-        style={{ background: "radial-gradient(circle at 35% 35%, #fffef4 0%, #f1efdc 60%, #d9d7c2 100%)", boxShadow: "0 0 30px 8px rgba(225,235,255,0.45)" }}
-      />
-    </>
+    <motion.div
+      className="absolute -right-32 -top-32 size-[44rem] rounded-full"
+      style={{ background: "radial-gradient(circle, rgba(215,228,255,0.7) 0%, rgba(175,198,245,0.34) 32%, rgba(150,175,235,0) 66%)" }}
+      animate={reduced ? undefined : { scale: [1, 1.06, 1], opacity: [0.85, 1, 0.85] }}
+      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+    />
   );
 }
 
