@@ -38,20 +38,34 @@ export default function UserMenu() {
     transition: { type: "spring" as const, stiffness: 400, damping: 20 },
   };
 
-  // Logged out (or still checking the saved session): same icon, same spot; it leads to the login page.
+  // Logged out (or still checking the saved session): a Reduce motion button plus the same user icon, which leads to
+  // the login page. Once logged in, the Reduce motion switch moves into the profile menu below.
   if (!user) {
     return (
-      <motion.div {...motionProps} className="hidden sm:block">
-        <Link
-          href="/login"
-          aria-label={t("auth.login")}
-          title={t("auth.login")}
-          aria-disabled={loading}
-          className={cn(ICON_BUTTON, "border-primary/15 bg-white/60 text-primary hover:bg-primary/10")}
+      <div className="hidden items-center gap-2 sm:flex">
+        <motion.button
+          type="button"
+          onClick={() => setReduce(!reduce)}
+          aria-pressed={reduce}
+          aria-label={t("account.reduceMotion")}
+          title={t("account.reduceMotion")}
+          {...motionProps}
+          className={cn(ICON_BUTTON, reduce ? "border-primary bg-primary text-primary-foreground" : "border-primary/15 bg-white/60 text-primary hover:bg-primary/10")}
         >
-          <UserRound className="size-5" aria-hidden />
-        </Link>
-      </motion.div>
+          <Wind className="size-5" aria-hidden />
+        </motion.button>
+        <motion.div {...motionProps}>
+          <Link
+            href="/login"
+            aria-label={t("auth.login")}
+            title={t("auth.login")}
+            aria-disabled={loading}
+            className={cn(ICON_BUTTON, "border-primary/15 bg-white/60 text-primary hover:bg-primary/10")}
+          >
+            <UserRound className="size-5" aria-hidden />
+          </Link>
+        </motion.div>
+      </div>
     );
   }
 

@@ -206,20 +206,18 @@ export default function Header() {
                   <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
                 </Link>
               )}
-              {user && (
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={reduce}
-                  onClick={() => setReduce(!reduce)}
-                  className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary"
-                >
-                  <Wind className="size-4" aria-hidden /> {t("account.reduceMotion")}
-                  <span aria-hidden className={cn("relative h-4 w-7 rounded-full transition-colors", reduce ? "bg-primary" : "bg-primary/20")}>
-                    <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow transition-all", reduce ? "left-3.5" : "left-0.5")} />
-                  </span>
-                </button>
-              )}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={reduce}
+                onClick={() => setReduce(!reduce)}
+                className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary"
+              >
+                <Wind className="size-4" aria-hidden /> {t("account.reduceMotion")}
+                <span aria-hidden className={cn("relative h-4 w-7 rounded-full transition-colors", reduce ? "bg-primary" : "bg-primary/20")}>
+                  <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow transition-all", reduce ? "left-3.5" : "left-0.5")} />
+                </span>
+              </button>
               {user && (
                 <button
                   type="button"
