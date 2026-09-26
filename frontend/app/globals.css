@@ -66,3 +66,8 @@
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* Clear night sky is a mid blue: use a darker grey for muted text sitting directly on it (cards are unaffected, they stay frosted white). */
+[data-sky="night"] {
+  --muted-foreground: #2f3b34;
+}

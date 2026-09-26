@@ -8,12 +8,12 @@ import type { Condition, WeatherKind } from "@/lib/weather";
 
 // Full-page weather scene behind all content ("the canvas"): a sky gradient for the current weather plus animated
 // effects: rain, lightning, sun glow, drifting clouds, fog, snow. Every sky stays light so the dark page text keeps its
-// contrast. Sits at z-0 with pointer-events off; page content is layered above it. With "reduce motion" set in the
+// contrast (a clear night is a mid blue with stars and the odd shooting star). Sits at z-0 with pointer-events off; page content is layered above it. With "reduce motion" set in the
 // operating system only the still sky is shown (no falling drops, no flashes).
 const SKY: Record<WeatherKind, { day: string; night: string }> = {
   clear: {
     day: "linear-gradient(180deg, #f3fbd8 0%, #d3f1a3 45%, #b4e57a 100%)",
-    night: "linear-gradient(180deg, #dfe8f3 0%, #c9dbe6 55%, #b9d3d0 100%)",
+    night: "linear-gradient(180deg, #8ba7d2 0%, #7897c6 55%, #6a8bb9 100%)", // clear night: a mid blue, a little darker than the other skies, so the stars show
   },
   partly: {
     day: "linear-gradient(180deg, #eef8dd 0%, #cfeaa9 55%, #b7dd8f 100%)",
@@ -54,6 +54,11 @@ const DROP_FACTOR: Partial<Record<WeatherKind, number>> = { drizzle: 0.45, rain:
 export default function WeatherBackdrop() {
   const { condition, weather } = useWeather();
   const { reduce: reduced } = useReduceMotion();
+  const darkSky = condition?.kind === "clear" && !condition.isDay;
+  useEffect(() => {
+    document.documentElement.dataset.sky = darkSky ? "night" : "day";
+    return () => { delete document.documentElement.dataset.sky; };
+  }, [darkSky]);
   if (!condition) return null;
   const key = `${condition.kind}-${condition.isDay ? "d" : "n"}`;
   const wind = weather?.windSpeed ?? 8;
@@ -92,6 +97,7 @@ function Scene({ condition, wind, reduced }: { condition: Condition; wind: numbe
     <>
       {sunny && <SunGlow reduced={reduced} strong={kind === "clear"} />}
       {moon && <MoonGlow />}
+      {kind === "clear" && !isDay && <Stars reduced={reduced} />}
       {(kind === "partly" || grey || kind === "snow") && (
         <Clouds tone={kind === "thunder" || kind === "showers" ? "dark" : grey ? "grey" : "white"} count={kind === "partly" ? 3 : 5} reduced={reduced} />
       )}
@@ -123,6 +129,113 @@ function SunGlow({ reduced, strong }: { reduced: boolean; strong: boolean }) {
       />
     </>
   );
+}
+
+// Clear night: a field of softly twinkling stars plus a shooting star now and then (sometimes two close together).
+// With "reduce motion" the stars are still and nothing shoots.
+function Stars({ reduced }: { reduced: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    let w = 0;
+    let h = 0;
+    let stars: { x: number; y: number; r: number; a: number; speed: number; phase: number }[] = [];
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const count = Math.round(Math.min(170, Math.max(60, (w * h) / 9000)));
+      stars = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h * 0.9,
+        r: 0.7 + Math.random() * 1.5,
+        a: 0.55 + Math.random() * 0.45,
+        speed: 0.6 + Math.random() * 1.6,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    type Shot = { x: number; y: number; vx: number; vy: number; born: number; life: number };
+    let shots: Shot[] = [];
+    let nextShot = performance.now() + 3500 + Math.random() * 4000;
+    const launch = (now: number) => {
+      const fromTop = Math.random() < 0.5;
+      shots.push({
+        x: fromTop ? w * (0.3 + Math.random() * 0.65) : w * (0.55 + Math.random() * 0.4),
+        y: fromTop ? -10 : h * (0.05 + Math.random() * 0.25),
+        vx: -(w * (0.55 + Math.random() * 0.25)),
+        vy: h * (0.3 + Math.random() * 0.2),
+        born: now,
+        life: 900 + Math.random() * 400,
+      });
+    };
+
+    const draw = (now: number) => {
+      ctx.clearRect(0, 0, w, h);
+      for (const s of stars) {
+        const tw = reduced ? 1 : 0.65 + 0.35 * Math.sin(now / 1000 * s.speed + s.phase);
+        ctx.globalAlpha = s.a * tw;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (reduced) return;
+      if (now > nextShot) {
+        launch(now);
+        if (Math.random() < 0.3) setTimeout(() => launch(performance.now()), 350 + Math.random() * 500); // occasionally a pair
+        nextShot = now + 9000 + Math.random() * 9000;
+      }
+      shots = shots.filter((sh) => now - sh.born < sh.life);
+      for (const sh of shots) {
+        const t = (now - sh.born) / sh.life;
+        const x = sh.x + sh.vx * t;
+        const y = sh.y + sh.vy * t;
+        const len = 0.14;
+        const tx = x - sh.vx * len;
+        const ty = y - sh.vy * len;
+        const fade = Math.sin(Math.PI * Math.min(1, t));
+        const grad = ctx.createLinearGradient(x, y, tx, ty);
+        grad.addColorStop(0, `rgba(255,255,255,${0.95 * fade})`);
+        grad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${fade})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    if (reduced) {
+      draw(0);
+      return () => window.removeEventListener("resize", resize);
+    }
+    let raf = 0;
+    const loop = (now: number) => {
+      if (!document.hidden) draw(now);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
+  }, [reduced]);
+  return <canvas ref={ref} className="absolute inset-0 size-full" />;
 }
 
 function MoonGlow() {
