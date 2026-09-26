@@ -7,45 +7,45 @@ import WeatherOverlay from "@/components/weather/WeatherOverlay";
 import type { Condition, WeatherKind } from "@/lib/weather";
 
 // Full-page weather scene behind all content ("the canvas"): a sky gradient for the current weather plus animated
-// effects: rain, lightning, sun glow, drifting clouds, fog, snow. Every sky stays light so the dark page text keeps its
-// contrast (a clear night is a mid blue with stars and the odd shooting star). Sits at z-0 with pointer-events off; page content is layered above it. With "reduce motion" set in the
+// effects: rain, lightning, sun glow, drifting clouds, fog, snow. Day skies stay light so the dark page text keeps its
+// contrast; night skies are near-black blue (stars on clear and partly cloudy nights, with the odd shooting star) and the page text flips light where it sits directly on them (see [data-sky="night"] in globals.css). Sits at z-0 with pointer-events off; page content is layered above it. With "reduce motion" set in the
 // operating system only the still sky is shown (no falling drops, no flashes).
 const SKY: Record<WeatherKind, { day: string; night: string }> = {
   clear: {
     day: "linear-gradient(180deg, #f3fbd8 0%, #d3f1a3 45%, #b4e57a 100%)",
-    night: "linear-gradient(180deg, #8ba7d2 0%, #7897c6 55%, #6a8bb9 100%)", // clear night: a mid blue, a little darker than the other skies, so the stars show
+    night: "linear-gradient(180deg, #03060f 0%, #0a1430 55%, #14264d 100%)",
   },
   partly: {
     day: "linear-gradient(180deg, #eef8dd 0%, #cfeaa9 55%, #b7dd8f 100%)",
-    night: "linear-gradient(180deg, #dbe3ee 0%, #c8d5e0 60%, #bdd0cd 100%)",
+    night: "linear-gradient(180deg, #04081a 0%, #0d1a3a 55%, #182a4c 100%)",
   },
   cloudy: {
     day: "linear-gradient(180deg, #e6ece6 0%, #d3ddd3 55%, #c3d0c4 100%)",
-    night: "linear-gradient(180deg, #dadfe6 0%, #ccd4dc 60%, #c0cbcb 100%)",
+    night: "linear-gradient(180deg, #080d1a 0%, #111a2c 55%, #1b283a 100%)",
   },
   fog: {
     day: "linear-gradient(180deg, #e9eeeb 0%, #dde5e1 60%, #d2dcd7 100%)",
-    night: "linear-gradient(180deg, #dde2e8 0%, #d3dae1 60%, #c9d3d5 100%)",
+    night: "linear-gradient(180deg, #0e131d 0%, #182029 55%, #232d38 100%)",
   },
   drizzle: {
     day: "linear-gradient(180deg, #dbe6ea 0%, #c9d9df 55%, #bccdcd 100%)",
-    night: "linear-gradient(180deg, #d3dbe4 0%, #c3d0da 60%, #b8c8cb 100%)",
+    night: "linear-gradient(180deg, #080f1d 0%, #101c30 55%, #1a2a3c 100%)",
   },
   rain: {
     day: "linear-gradient(180deg, #d0dde5 0%, #bccdd8 55%, #adc2c7 100%)",
-    night: "linear-gradient(180deg, #c9d3df 0%, #b8c7d5 60%, #aabfc4 100%)",
+    night: "linear-gradient(180deg, #060c19 0%, #0d1729 55%, #162636 100%)",
   },
   showers: {
     day: "linear-gradient(180deg, #c6d4de 0%, #b1c4d1 55%, #a2b9c0 100%)",
-    night: "linear-gradient(180deg, #c0cbd8 0%, #aebfce 60%, #a0b6bc 100%)",
+    night: "linear-gradient(180deg, #050a16 0%, #0b1424 55%, #132130 100%)",
   },
   thunder: {
     day: "linear-gradient(180deg, #bdc6d4 0%, #a9b6c6 55%, #9dafb9 100%)",
-    night: "linear-gradient(180deg, #b7c0cf 0%, #a5b2c4 60%, #97aab5 100%)",
+    night: "linear-gradient(180deg, #04070e 0%, #0a101c 55%, #101a27 100%)",
   },
   snow: {
     day: "linear-gradient(180deg, #f1f6fa 0%, #e0ebf3 55%, #d2e2ea 100%)",
-    night: "linear-gradient(180deg, #e0e7f0 0%, #d3dfea 60%, #c8d9df 100%)",
+    night: "linear-gradient(180deg, #0f1a2c 0%, #1b2b44 55%, #2a3d58 100%)",
   },
 };
 
@@ -54,7 +54,7 @@ const DROP_FACTOR: Partial<Record<WeatherKind, number>> = { drizzle: 0.45, rain:
 export default function WeatherBackdrop() {
   const { condition, weather } = useWeather();
   const { reduce: reduced } = useReduceMotion();
-  const darkSky = condition?.kind === "clear" && !condition.isDay;
+  const darkSky = !!condition && !condition.isDay;
   useEffect(() => {
     document.documentElement.dataset.sky = darkSky ? "night" : "day";
     return () => { delete document.documentElement.dataset.sky; };
@@ -97,12 +97,12 @@ function Scene({ condition, wind, reduced }: { condition: Condition; wind: numbe
     <>
       {sunny && <SunGlow reduced={reduced} strong={kind === "clear"} />}
       {moon && <MoonGlow />}
-      {kind === "clear" && !isDay && <Stars reduced={reduced} />}
+      {(kind === "clear" || kind === "partly") && !isDay && <Stars reduced={reduced} sparse={kind === "partly"} />}
       {(kind === "partly" || grey || kind === "snow") && (
-        <Clouds tone={kind === "thunder" || kind === "showers" ? "dark" : grey ? "grey" : "white"} count={kind === "partly" ? 3 : 5} reduced={reduced} />
+        <Clouds tone={isDay ? (kind === "thunder" || kind === "showers" ? "dark" : grey ? "grey" : "white") : "night"} count={kind === "partly" ? 3 : 5} reduced={reduced} />
       )}
-      {kind === "fog" && <Haze reduced={reduced} />}
-      {precip && !reduced && <PrecipCanvas kind={kind} wind={wind} />}
+      {kind === "fog" && <Haze reduced={reduced} night={!isDay} />}
+      {precip && !reduced && <PrecipCanvas kind={kind} wind={wind} night={!isDay} />}
     </>
   );
 }
@@ -133,7 +133,7 @@ function SunGlow({ reduced, strong }: { reduced: boolean; strong: boolean }) {
 
 // Clear night: a field of softly twinkling stars plus a shooting star now and then (sometimes two close together).
 // With "reduce motion" the stars are still and nothing shoots.
-function Stars({ reduced }: { reduced: boolean }) {
+function Stars({ reduced, sparse }: { reduced: boolean; sparse: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -149,7 +149,7 @@ function Stars({ reduced }: { reduced: boolean }) {
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.round(Math.min(170, Math.max(60, (w * h) / 9000)));
+      const count = Math.round(Math.min(170, Math.max(60, (w * h) / 9000)) * (sparse ? 0.5 : 1));
       stars = Array.from({ length: count }, () => ({
         x: Math.random() * w,
         y: Math.random() * h * 0.9,
@@ -234,23 +234,29 @@ function Stars({ reduced }: { reduced: boolean }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [reduced]);
+  }, [reduced, sparse]);
   return <canvas ref={ref} className="absolute inset-0 size-full" />;
 }
 
 function MoonGlow() {
   return (
-    <div
-      className="absolute -right-24 -top-24 size-[30rem] rounded-full"
-      style={{ background: "radial-gradient(circle, rgba(255,255,240,0.85) 0%, rgba(230,240,255,0.45) 35%, rgba(230,240,255,0) 68%)" }}
-    />
+    <>
+      <div
+        className="absolute -right-24 -top-24 size-[30rem] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(200,220,255,0.28) 0%, rgba(170,195,240,0.12) 38%, rgba(170,195,240,0) 68%)" }}
+      />
+      <div
+        className="absolute right-[9%] top-[9%] size-14 rounded-full"
+        style={{ background: "radial-gradient(circle at 35% 35%, #fffef4 0%, #f1efdc 60%, #d9d7c2 100%)", boxShadow: "0 0 30px 8px rgba(225,235,255,0.45)" }}
+      />
+    </>
   );
 }
 
 // A few big blurred puffs drifting slowly across the sky (pure CSS/motion, cheap).
-function Clouds({ tone, count, reduced }: { tone: "white" | "grey" | "dark"; count: number; reduced: boolean }) {
-  const color = tone === "white" ? "255,255,255" : tone === "grey" ? "150,165,175" : "88,102,120";
-  const alpha = tone === "white" ? 0.7 : tone === "grey" ? 0.5 : 0.55;
+function Clouds({ tone, count, reduced }: { tone: "white" | "grey" | "dark" | "night"; count: number; reduced: boolean }) {
+  const color = tone === "white" ? "255,255,255" : tone === "grey" ? "150,165,175" : tone === "night" ? "70,88,120" : "88,102,120";
+  const alpha = tone === "white" ? 0.7 : tone === "grey" ? 0.5 : tone === "night" ? 0.4 : 0.55;
   return (
     <>
       {Array.from({ length: count }, (_, i) => {
@@ -272,13 +278,13 @@ function Clouds({ tone, count, reduced }: { tone: "white" | "grey" | "dark"; cou
   );
 }
 
-function Haze({ reduced }: { reduced: boolean }) {
+function Haze({ reduced, night }: { reduced: boolean; night: boolean }) {
   return (
     <>
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="absolute -left-1/4 h-56 w-[150%] rounded-full bg-white/60 blur-3xl"
+          className={`absolute -left-1/4 h-56 w-[150%] rounded-full blur-3xl ${night ? "bg-slate-400/20" : "bg-white/60"}`}
           style={{ top: `${18 + i * 26}%` }}
           animate={reduced ? undefined : { x: ["-6%", "8%", "-6%"] }}
           transition={{ duration: 28 + i * 8, repeat: Infinity, ease: "easeInOut" }}
@@ -292,7 +298,7 @@ interface Drop { x: number; y: number; len: number; speed: number; alpha: number
 interface Flake { x: number; y: number; r: number; speed: number; sway: number; phase: number }
 
 // Rain / drizzle / storm / snow on one canvas, plus lightning for storms.
-function PrecipCanvas({ kind, wind }: { kind: WeatherKind; wind: number }) {
+function PrecipCanvas({ kind, wind, night }: { kind: WeatherKind; wind: number; night: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -370,7 +376,7 @@ function PrecipCanvas({ kind, wind }: { kind: WeatherKind; wind: number }) {
           d.y += d.speed * dt;
           d.x += d.speed * dt * slant;
           if (d.y > h + 20) { d.y = -20 - Math.random() * 60; d.x = Math.random() * (w + h * slant) - h * slant; }
-          ctx.strokeStyle = `rgba(62,96,128,${d.alpha})`;
+          ctx.strokeStyle = `rgba(${night ? "170,200,235" : "62,96,128"},${d.alpha})`;
           ctx.beginPath();
           ctx.moveTo(d.x, d.y);
           ctx.lineTo(d.x - d.len * slant, d.y - d.len);
@@ -408,7 +414,7 @@ function PrecipCanvas({ kind, wind }: { kind: WeatherKind; wind: number }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", size);
     };
-  }, [kind, wind]);
+  }, [kind, wind, night]);
 
   return <canvas ref={ref} className="absolute inset-0 size-full" />;
 }

@@ -67,7 +67,38 @@
   scroll-behavior: auto !important;
 }
 
-/* Clear night sky is a mid blue: use a darker grey for muted text sitting directly on it (cards are unaffected, they stay frosted white). */
+/* Night skies are near-black blue: text that sits directly on the sky turns light, while panels and cards (light frosted
+   surfaces, matched by their background utility classes) keep the normal dark text; translucent tinted panels and the dark
+   green hero keep light text. :where() keeps the card rule at zero
+   specificity so explicit text-* utilities (white text on green buttons, the landing scenes) still win. */
 [data-sky="night"] {
-  --muted-foreground: #2f3b34;
+  --foreground: #e8eefc;
+  --muted-foreground: #b4c2e3;
+  --accent-foreground: #cfe0ff;
+}
+:where([data-sky="night"]) :where([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) {
+  --foreground: #1f2a1f;
+  --muted-foreground: #5f6b5f;
+  --accent-foreground: #1f4d2a;
+  color: #1f2a1f;
+}
+[data-sky="night"] footer {
+  background-image: none;
+  --foreground: #e8eefc;
+  --muted-foreground: #b4c2e3;
+  color: #b4c2e3;
+}
+/* Translucent white panels would turn grey over a dark sky: make them (almost) solid frosted white at night. */
+[data-sky="night"] :is([class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) {
+  background-color: rgba(247, 249, 245, 0.92);
+}
+/* Green text directly on the night sky (translucent tinted panels) gets a light green; on light surfaces it stays the normal green. */
+[data-sky="night"] .text-primary {
+  color: #9fe0aa;
+}
+[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) .text-primary {
+  color: var(--color-primary);
+}
+[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]).text-primary {
+  color: var(--color-primary);
 }

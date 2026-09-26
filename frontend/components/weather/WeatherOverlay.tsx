@@ -32,7 +32,7 @@ export default function WeatherOverlay({ kind, isDay, wind }: { kind: WeatherKin
           exit={{ opacity: 0 }}
           transition={{ duration: 1 }}
         >
-          <OverlayCanvas kind={kind} sunny={sunny} wind={wind} />
+          <OverlayCanvas kind={kind} sunny={sunny} wind={wind} night={!isDay} />
         </motion.div>
       )}
     </AnimatePresence>
@@ -65,7 +65,7 @@ function findCards(): Element[] {
   return cand.filter((el) => !cand.some((o) => o !== el && o.contains(el)));
 }
 
-function OverlayCanvas({ kind, sunny, wind }: { kind: WeatherKind; sunny: boolean; wind: number }) {
+function OverlayCanvas({ kind, sunny, wind, night }: { kind: WeatherKind; sunny: boolean; wind: number; night: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -235,7 +235,7 @@ function OverlayCanvas({ kind, sunny, wind }: { kind: WeatherKind; sunny: boolea
       } else {
         ctx.lineCap = "round";
         for (const f of falls) {
-          ctx.strokeStyle = `rgba(48,84,118,${f.alpha})`;
+          ctx.strokeStyle = `rgba(${night ? "165,195,232" : "48,84,118"},${f.alpha})`;
           ctx.lineWidth = 0.9 + f.z * 0.7;
           ctx.beginPath();
           ctx.moveTo(f.x, f.y);
@@ -250,7 +250,7 @@ function OverlayCanvas({ kind, sunny, wind }: { kind: WeatherKind; sunny: boolea
           f.x += f.vx * dt;
           f.y += f.vy * dt;
           if (f.y > H + 60) resetFall(f, false);
-          ctx.strokeStyle = `rgba(70,105,140,${f.alpha})`;
+          ctx.strokeStyle = `rgba(${night ? "185,210,240" : "70,105,140"},${f.alpha})`;
           ctx.beginPath();
           ctx.moveTo(f.x, f.y);
           ctx.lineTo(f.x - f.len * slant, f.y - f.len);
@@ -455,7 +455,7 @@ function OverlayCanvas({ kind, sunny, wind }: { kind: WeatherKind; sunny: boolea
       window.removeEventListener("resize", size);
       window.removeEventListener("weather-strike", onStrike);
     };
-  }, [kind, sunny, wind]);
+  }, [kind, sunny, wind, night]);
 
   return <canvas ref={ref} className="size-full" />;
 }
