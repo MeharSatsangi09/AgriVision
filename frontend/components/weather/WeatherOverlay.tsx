@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useReduceMotion } from "@/lib/reduceMotion";
 import type { WeatherKind } from "@/lib/weather";
 
 // The weather acts ON the page, not just behind it. This canvas sits above the cards (never blocks clicks) and reads the
@@ -16,7 +17,7 @@ import type { WeatherKind } from "@/lib/weather";
 const RAINY: Partial<Record<WeatherKind, number>> = { drizzle: 0.4, rain: 1, showers: 1.5, thunder: 1.3 };
 
 export default function WeatherOverlay({ kind, isDay, wind }: { kind: WeatherKind; isDay: boolean; wind: number }) {
-  const reduced = !!useReducedMotion();
+  const { reduce: reduced } = useReduceMotion();
   const sunny = isDay && (kind === "clear" || kind === "partly");
   const active = !reduced && (kind in RAINY || kind === "snow" || sunny);
   return (

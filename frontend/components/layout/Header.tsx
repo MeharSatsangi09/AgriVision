@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, UserCog, UserRound, X } from "lucide-react";
+import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, UserCog, UserRound, Wind, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { useAuth } from "@/lib/auth";
+import { useReduceMotion } from "@/lib/reduceMotion";
 import { LANGUAGES, isLangCode } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/core/animated-background";
@@ -66,6 +67,7 @@ export default function Header() {
   const path = usePathname();
   const { unseenCount } = useSeen();
   const { user, logout } = useAuth();
+  const { reduce, setReduce } = useReduceMotion();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the mobile menu on route change so it doesn't stay open after navigating.
@@ -203,6 +205,20 @@ export default function Header() {
                 <Link href="/my-reports" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
                   <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
                 </Link>
+              )}
+              {user && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={reduce}
+                  onClick={() => setReduce(!reduce)}
+                  className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary"
+                >
+                  <Wind className="size-4" aria-hidden /> {t("account.reduceMotion")}
+                  <span aria-hidden className={cn("relative h-4 w-7 rounded-full transition-colors", reduce ? "bg-primary" : "bg-primary/20")}>
+                    <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow transition-all", reduce ? "left-3.5" : "left-0.5")} />
+                  </span>
+                </button>
               )}
               {user && (
                 <button

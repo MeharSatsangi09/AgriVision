@@ -2,9 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { FileText, LogOut, UserCog, UserRound } from "lucide-react";
+import { FileText, LogOut, UserCog, UserRound, Wind } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useReduceMotion } from "@/lib/reduceMotion";
 import { cn } from "@/lib/utils";
 
 const ICON_BUTTON =
@@ -15,6 +16,7 @@ const ICON_BUTTON =
 export default function UserMenu() {
   const { t } = useI18n();
   const { user, loading, logout } = useAuth();
+  const { reduce, setReduce } = useReduceMotion();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -85,6 +87,12 @@ export default function UserMenu() {
             <Link href="/my-reports" role="menuitem" onClick={() => setOpen(false)} className={item}>
               <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
             </Link>
+            <button type="button" role="menuitemcheckbox" aria-checked={reduce} onClick={() => setReduce(!reduce)} className={item}>
+              <Wind className="size-4" aria-hidden /> <span className="flex-1">{t("account.reduceMotion")}</span>
+              <span aria-hidden className={cn("relative h-4 w-7 rounded-full transition-colors", reduce ? "bg-primary" : "bg-primary/20")}>
+                <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow transition-all", reduce ? "left-3.5" : "left-0.5")} />
+              </span>
+            </button>
             <div role="separator" className="my-1 h-px bg-primary/15" />
             <button
               type="button"

@@ -2,6 +2,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { ReduceMotionProvider } from "@/lib/reduceMotion";
 import { DataProvider } from "@/lib/data";
 import { AuthProvider } from "@/lib/auth";
 import { WeatherProvider } from "@/lib/WeatherProvider";
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="flex min-h-screen flex-col antialiased">
+        <ReduceMotionProvider>
         <I18nProvider>
           <DataProvider>
             <AuthProvider>
@@ -37,6 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </AuthProvider>
           </DataProvider>
         </I18nProvider>
+        </ReduceMotionProvider>
       </body>
     </html>
   );

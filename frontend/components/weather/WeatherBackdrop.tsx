@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useReduceMotion } from "@/lib/reduceMotion";
 import { useWeather } from "@/lib/WeatherProvider";
 import WeatherOverlay from "@/components/weather/WeatherOverlay";
 import type { Condition, WeatherKind } from "@/lib/weather";
@@ -52,7 +53,7 @@ const DROP_FACTOR: Partial<Record<WeatherKind, number>> = { drizzle: 0.45, rain:
 
 export default function WeatherBackdrop() {
   const { condition, weather } = useWeather();
-  const reduced = !!useReducedMotion();
+  const { reduce: reduced } = useReduceMotion();
   if (!condition) return null;
   const key = `${condition.kind}-${condition.isDay ? "d" : "n"}`;
   const wind = weather?.windSpeed ?? 8;

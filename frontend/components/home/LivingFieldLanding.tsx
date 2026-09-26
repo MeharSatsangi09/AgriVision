@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
+import { useReduceMotion } from "@/lib/reduceMotion";
 import { ArrowUpRight, Leaf, MoveDown } from "lucide-react";
 
 const scenes = [
@@ -31,7 +32,7 @@ export default function LivingFieldLanding() {
     const settled = useRef(false);
     const [pos, setPos] = useState<{ x: number; y: number; scale: number } | null>(null);
     const [letterX, setLetterX] = useState<{ lefts: number[]; width: number } | null>(null);
-    const reducedMotion = useReducedMotion();
+    const { reduce: reducedMotion } = useReduceMotion();
     const pointerX = useSpring(useMotionValue(50), { stiffness: 70, damping: 22 });
     const pointerY = useSpring(useMotionValue(50), { stiffness: 70, damping: 22 });
 
