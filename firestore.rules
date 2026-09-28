@@ -17,6 +17,16 @@ service cloud.firestore {
         && ok(request.resource.data, 'place') && ok(request.resource.data, 'district')
         && ok(request.resource.data, 'state') && ok(request.resource.data, 'updatedAt');
       allow delete: if false;
+
+      match /followUpConversations/{conversationId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+
+        match /messages/{messageId} {
+          allow read: if request.auth != null && request.auth.uid == uid;
+          allow write: if false;
+        }
+      }
     }
     // Written by the function when the pipeline fails, so the UI can show an error.
     match /uploadErrors/{id} {

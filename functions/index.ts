@@ -183,9 +183,14 @@ export const translateUi = onCall({ region: REGION, maxInstances: 3, memory: "25
 // its instruction keeps it on-topic, the answer is shown only to the same person who asked it, nothing is
 // written back to the report, and maxInstances/length caps bound cost/abuse.
 export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 60 }, async (req) => {
-  const { reportId, question, lang } = (req.data ?? {}) as { reportId?: unknown; question?: unknown; lang?: unknown };
+  const uid = req.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "log in first");
+  const { reportId, question, lang, conversationId } = (req.data ?? {}) as { reportId?: unknown; question?: unknown; lang?: unknown; conversationId?: unknown };
   if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) {
     throw new HttpsError("invalid-argument", "a valid reportId is required");
+  }
+  if (conversationId !== undefined && (typeof conversationId !== "string" || !/^[A-Za-z0-9]{20}$/.test(conversationId))) {
+    throw new HttpsError("invalid-argument", "invalid conversationId");
   }
   const q = typeof question === "string" ? question.trim() : "";
   if (!q || q.length > 300) throw new HttpsError("invalid-argument", "question must be 1-300 characters");
@@ -194,6 +199,22 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError("not-found", "report not found");
   const r = snap.data()!;
+  if (r.uid !== uid) throw new HttpsError("permission-denied", "this report is not yours");
+
+  const db = getFirestore();
+  const conversations = db.collection("users").doc(uid).collection("followUpConversations");
+  const conversationRef = conversationId ? conversations.doc(conversationId) : conversations.doc();
+  const conversationSnap = await conversationRef.get();
+  if (conversationSnap.exists && conversationSnap.data()?.reportId !== reportId) {
+    throw new HttpsError("permission-denied", "conversation does not belong to this report");
+  }
+  const historySnap = conversationSnap.exists
+    ? await conversationRef.collection("messages").orderBy("createdAt", "desc").limit(12).get()
+    : { docs: [] };
+  const history = historySnap.docs.reverse().map((message) => {
+    const data = message.data();
+    return `${data.role === "assistant" ? "Assistant" : "Farmer"}: ${String(data.text ?? "").slice(0, 600)}`;
+  }).join("\n");
 
   const reconciliationSummary = r.reconciliation
     ? `Our own trained model was also checked against Gemini's diagnosis: ${r.reconciliation.reasoning}`
@@ -207,19 +228,58 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
       advisory: String(r.advisory ?? ""),
       location: `lat ${r.lat}, lng ${r.lng}`,
       reconciliationSummary,
+      conversationHistory: history || "(new conversation)",
     },
     q
   );
 
   const targetLang = isLang(lang) ? lang : undefined;
-  if (!targetLang) return { answer: answerEn, lang: "en" };
-  try {
-    const [translated] = await translateTexts([answerEn], targetLang);
-    return { answer: translated, lang: targetLang };
-  } catch (err) {
-    console.error(`askFollowUp translate ${targetLang} failed:`, err);
-    return { answer: answerEn, lang: "en", translationFailed: true };
+  let answer = answerEn;
+  let answerLang = "en";
+  let translationFailed = false;
+  if (targetLang) {
+    try {
+      [answer] = await translateTexts([answerEn], targetLang);
+      answerLang = targetLang;
+    } catch (err) {
+      console.error(`askFollowUp translate ${targetLang} failed:`, err);
+      translationFailed = true;
+    }
   }
+
+  const batch = db.batch();
+  if (!conversationSnap.exists) {
+    batch.set(conversationRef, { reportId, title: q.slice(0, 70), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lastMessage: q.slice(0, 160), messageCount: 0 });
+  }
+  batch.set(conversationRef.collection("messages").doc(), { role: "user", text: q, lang: typeof lang === "string" ? lang : "en", source: "text", createdAt: new Date().toISOString() });
+  batch.set(conversationRef.collection("messages").doc(), { role: "assistant", text: answer, lang: answerLang, source: "ai", createdAt: new Date().toISOString() });
+  batch.set(conversationRef, { updatedAt: new Date().toISOString(), lastMessage: answer.slice(0, 160), messageCount: (conversationSnap.data()?.messageCount ?? 0) + 2 }, { merge: true });
+  await batch.commit();
+
+  return { conversationId: conversationRef.id, answer, lang: answerLang, translationFailed };
+});
+
+export const listFollowUpConversations = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
+  const uid = req.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "log in first");
+  const reportId = (req.data as { reportId?: unknown } | undefined)?.reportId;
+  if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) throw new HttpsError("invalid-argument", "a valid reportId is required");
+  const report = await getFirestore().collection("reports").doc(reportId).get();
+  if (!report.exists || report.data()?.uid !== uid) throw new HttpsError("permission-denied", "this report is not yours");
+  const snap = await getFirestore().collection("users").doc(uid).collection("followUpConversations").where("reportId", "==", reportId).orderBy("updatedAt", "desc").limit(20).get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+});
+
+export const getFollowUpConversation = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
+  const uid = req.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "log in first");
+  const conversationId = (req.data as { conversationId?: unknown } | undefined)?.conversationId;
+  if (typeof conversationId !== "string" || !/^[A-Za-z0-9]{20}$/.test(conversationId)) throw new HttpsError("invalid-argument", "invalid conversationId");
+  const ref = getFirestore().collection("users").doc(uid).collection("followUpConversations").doc(conversationId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "conversation not found");
+  const messages = await ref.collection("messages").orderBy("createdAt", "asc").limit(40).get();
+  return { id: snap.id, ...snap.data(), messages: messages.docs.map((doc) => ({ id: doc.id, ...doc.data() })) };
 });
 
 // Cloud Speech-to-Text for the Follow-up box's mic button (frontend/components/report/FollowUpBox.tsx).
@@ -227,6 +287,7 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
 // the text input for the farmer to review/edit before submitting through the normal askFollowUpQuestion
 // flow above -- this callable never itself answers a question, it only transcribes.
 export const transcribeSpeech = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 30 }, async (req) => {
+  if (!req.auth?.uid) throw new HttpsError("unauthenticated", "log in first");
   const { audio, langCode } = (req.data ?? {}) as { audio?: unknown; langCode?: unknown };
   if (typeof audio !== "string" || !audio) throw new HttpsError("invalid-argument", "audio (base64) is required");
   // ~750 KB decoded is generous for a few seconds of a short spoken question; guards cost/abuse.
