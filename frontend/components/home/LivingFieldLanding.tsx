@@ -4,7 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { useReduceMotion } from "@/lib/reduceMotion";
-import { ArrowUpRight, Leaf, MoveDown } from "lucide-react";
+import { ArrowUpRight, Leaf, MoveDown, Video } from "lucide-react";
+
+const VIDEO_BG_KEY = "landingVideoBg";
 
 const scenes = [
     { eyebrow: "AGRIVISION", title: "AgriVision", copy: "", action: "", href: "", image: "/healthy-field.jpg", position: "center 52%", tone: "from-black/5 via-black/10 to-black/55", textMotion: { initial: { opacity: 0, scale: 0.88, y: 18, filter: "blur(14px)" }, animate: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }, transition: { duration: 0.9, ease: "easeOut" as const } } },
@@ -35,6 +37,32 @@ export default function LivingFieldLanding() {
     const { reduce: reducedMotion } = useReduceMotion();
     const pointerX = useSpring(useMotionValue(50), { stiffness: 70, damping: 22 });
     const pointerY = useSpring(useMotionValue(50), { stiffness: 70, damping: 22 });
+
+    // Scene 0 only: an optional looping video in place of the photo. Defaults to on (off if the visitor already
+    // has reduce motion on), but an explicit click always wins and is remembered from then on, same pattern as
+    // Reduce motion itself. Scrolling to any other scene always shows that scene's normal photo — the <video>
+    // element only exists while scene === 0, so it stops (and its CPU/network cost goes away) the moment you leave.
+    const [videoChoice, setVideoChoice] = useState<boolean | null>(null);
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(VIDEO_BG_KEY);
+            if (saved === "1") setVideoChoice(true);
+            else if (saved === "0") setVideoChoice(false);
+        } catch { }
+    }, []);
+    const videoOn = videoChoice ?? !reducedMotion;
+    const setVideo = (v: boolean) => {
+        setVideoChoice(v);
+        try { localStorage.setItem(VIDEO_BG_KEY, v ? "1" : "0"); } catch { }
+    };
+    const videoRef = useRef<HTMLVideoElement>(null);
+    useEffect(() => {
+        const el = videoRef.current;
+        if (!el) return;
+        if (scene === 0 && videoOn) el.play().catch(() => { });
+        else el.pause();
+    }, [scene, videoOn]);
+    const showVideo = scene === 0 && videoOn;
 
     function move(direction: 1 | -1) {
         if (busy) return;
@@ -181,13 +209,27 @@ export default function LivingFieldLanding() {
                 </motion.section>
             </AnimatePresence>
 
+            {scene === 0 && (
+                <video
+                    ref={videoRef}
+                    src="/landing-bg.mp4"
+                    className="absolute inset-0 size-full object-cover transition-opacity duration-500"
+                    style={{ opacity: videoOn ? 1 : 0, pointerEvents: "none" }}
+                    muted
+                    autoPlay
+                    loop
+                    playsInline
+                    preload="auto"
+                    aria-hidden
+                />
+            )}
+
             <motion.div
                 ref={wordRef}
                 aria-hidden
                 className="pointer-events-none absolute left-0 top-0 z-10 origin-top-left whitespace-nowrap pb-[0.12em] text-7xl font-semibold leading-[1.2] tracking-[-0.04em] drop-shadow-[0_4px_20px_rgba(0,0,0,0.3)] md:text-[11rem]"
-                style={{ opacity: pos ? 1 : 0 }}
                 initial={false}
-                animate={{ x: pos?.x ?? 0, y: pos?.y ?? 0, scale: pos?.scale ?? 1 }}
+                animate={{ x: pos?.x ?? 0, y: pos?.y ?? 0, scale: pos?.scale ?? 1, opacity: pos && !showVideo ? 1 : 0 }}
                 transition={settled.current ? { duration: reducedMotion ? 0 : 1.1, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
             >
                 {titleLetters0.map((letter, index) => (
@@ -215,6 +257,21 @@ export default function LivingFieldLanding() {
                         <span className="grid size-9 place-items-center rounded-full border border-white/30 bg-black/10 backdrop-blur-sm"><Leaf className="size-4" /></span>
                         <span ref={slotRef} className="inline-block h-6 w-28" aria-hidden />
                     </div>
+                    {scene === 0 && (
+                        <motion.button
+                            type="button"
+                            onClick={() => setVideo(!videoOn)}
+                            aria-pressed={videoOn}
+                            aria-label={videoOn ? "Stop background video" : "Play background video"}
+                            title={videoOn ? "Stop background video" : "Play background video"}
+                            whileHover={{ scale: 1.06, y: -1 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                            className={`pointer-events-auto grid size-9 place-items-center rounded-full border backdrop-blur-sm transition-colors ${videoOn ? "border-white/60 bg-white/20" : "border-white/30 bg-black/10"}`}
+                        >
+                            <Video className="size-4" />
+                        </motion.button>
+                    )}
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -251,7 +308,20 @@ export default function LivingFieldLanding() {
                         <div className="flex flex-col gap-2">
                             {scenes.map((item, index) => <span key={item.title} className={`transition-all duration-500 ${index === scene ? "h-10 w-1 bg-white" : "h-2 w-1 bg-white/45"}`} />)}
                         </div>
-                        <div className="hidden max-w-[12rem] text-xs uppercase tracking-[0.18em] text-white/65 sm:block">{scene === 0 ? "A clearer view begins here" : current.eyebrow}</div>
+                        <AnimatePresence>
+                            {!showVideo && (
+                                <motion.div
+                                    key={scene === 0 ? "tagline-0" : `tagline-${scene}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    transition={{ duration: reducedMotion ? 0 : 0.5, ease: "easeOut" }}
+                                    className="hidden max-w-[12rem] text-xs uppercase tracking-[0.18em] text-white/65 sm:block"
+                                >
+                                    {scene === 0 ? "A clearer view begins here" : current.eyebrow}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                     <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} className="pointer-events-auto">
                         {scene === scenes.length - 1 ? (
