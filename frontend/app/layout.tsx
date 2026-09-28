@@ -15,7 +15,7 @@ import SmoothScroll from "@/components/layout/SmoothScroll";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata = {
-  title: "AgriVision — AI crop health for Indian farmers",
+  title: "AgriVision",
   description: "Upload a photo of a diseased crop leaf and get a diagnosis, advice in your language, and outbreak alerts.",
 };
 
@@ -24,21 +24,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.variable}>
       <body className="flex min-h-screen flex-col antialiased">
         <ReduceMotionProvider>
-        <I18nProvider>
-          <DataProvider>
-            <AuthProvider>
-            <SeenProvider>
-            <WeatherProvider>
-              <WeatherBackdrop />
-              <SmoothScroll />
-              <Header />
-              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-              <Footer />
-            </WeatherProvider>
-            </SeenProvider>
-            </AuthProvider>
-          </DataProvider>
-        </I18nProvider>
+          <I18nProvider>
+            <DataProvider>
+              <AuthProvider>
+                <SeenProvider>
+                  <WeatherProvider>
+                    <WeatherBackdrop />
+                    <SmoothScroll />
+                    <Header />
+                    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+                    <Footer />
+                  </WeatherProvider>
+                </SeenProvider>
+              </AuthProvider>
+            </DataProvider>
+          </I18nProvider>
         </ReduceMotionProvider>
       </body>
     </html>
