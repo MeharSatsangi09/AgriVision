@@ -260,7 +260,7 @@ export function AlertStrip() {
 
 
 const TILE =
-  "rounded-2xl border border-primary/20 bg-gradient-to-br from-[#d5ebd0] via-white to-[#e6f3e2] p-5 shadow-sm transition-[box-shadow,border-color] duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_18px_3px_rgba(47,107,58,0.22)]";
+  "weather-tint rounded-2xl border border-primary/20 p-5 shadow-sm transition-[box-shadow,border-color] duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_18px_3px_rgba(47,107,58,0.22)]";
 
 const SEV_DOT = { low: "bg-severity-low", medium: "bg-severity-medium", high: "bg-severity-high" } as const;
 
@@ -296,7 +296,7 @@ export function Stats() {
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{t("home.reports")}</p>
           </MorphingPopoverTrigger>
-          <MorphingPopoverContent className="w-[min(22rem,calc(100vw-2rem))] bg-gradient-to-br from-[#d5ebd0] via-white to-[#e6f3e2] p-5">
+          <MorphingPopoverContent className="weather-tint w-[min(22rem,calc(100vw-2rem))] p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold">{t("home.reports")}</h3>
               <LiveBadge />
@@ -351,7 +351,7 @@ export function Stats() {
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{t("home.outbreaks")}</p>
           </MorphingPopoverTrigger>
-          <MorphingPopoverContent className="right-0 left-auto w-[min(22rem,calc(100vw-2rem))] bg-gradient-to-br from-[#d5ebd0] via-white to-[#e6f3e2] p-5">
+          <MorphingPopoverContent className="weather-tint right-0 left-auto w-[min(22rem,calc(100vw-2rem))] p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold">{t("home.outbreaks")}</h3>
               <LiveBadge />
@@ -404,7 +404,7 @@ export function HowItWorks() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#dcecd6] via-[#cfe5c8] to-[#bfdcb7] p-6 md:p-8">
+    <section className="weather-tint relative overflow-hidden rounded-[2rem] p-6 md:p-8">
       <div aria-hidden className="pointer-events-none absolute -left-16 -top-20 size-72 rounded-full bg-white/50 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-24 -right-10 size-80 rounded-full bg-primary/20 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(47,107,58,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(47,107,58,0.15)_1px,transparent_1px)] [background-size:42px_42px]" />

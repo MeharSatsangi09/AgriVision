@@ -76,7 +76,7 @@
   --muted-foreground: #b4c2e3;
   --accent-foreground: #cfe0ff;
 }
-:where([data-sky="night"]) :where([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) {
+:where([data-sky="night"]) :where([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="weather-tint"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) {
   --foreground: #1f2a1f;
   --muted-foreground: #5f6b5f;
   --accent-foreground: #1f4d2a;
@@ -96,9 +96,35 @@
 [data-sky="night"] .text-primary {
   color: #9fe0aa;
 }
-[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) .text-primary {
+[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="weather-tint"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]) .text-primary {
   color: var(--color-primary);
 }
-[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]).text-primary {
+[data-sky="night"] :is([class~="bg-card"], [class~="bg-muted"], [class~="bg-white"], [class~="weather-tint"], [class~="bg-accent"], [class~="bg-background"], [class~="bg-background/85"], [class~="via-white"], [class~="bg-white/45"], [class~="bg-white/50"], [class~="bg-white/55"], [class~="bg-white/60"], [class~="bg-white/70"], [class~="bg-white/75"], [class~="bg-white/85"]).text-primary {
   color: var(--color-primary);
 }
+
+/* Weather-tinted cards: the Reports/Active outbreaks tiles and the "How it works" panel shift their pastel
+   tint to match the current weather (set as data-weather on <html> by WeatherBackdrop.tsx) instead of staying
+   a fixed warm green that clashes on, say, a near-black clear night or a slate-grey storm. Cards stay light
+   (readable dark text, no separate text-colour handling needed) -- only the mood/temperature of the tint shifts. */
+:root {
+  --tint1: #d5ebd0;
+  --tint2: #ffffff;
+  --tint3: #e6f3e2;
+}
+.weather-tint {
+  background-image: linear-gradient(135deg, var(--tint1), var(--tint2), var(--tint3));
+}
+[data-weather="cloudy"] { --tint1: #dbe3d7; --tint2: #f1f3ef; --tint3: #e2e7de; }
+[data-weather="fog"] { --tint1: #e3e7e0; --tint2: #f4f5f2; --tint3: #dfe4dc; }
+[data-weather="drizzle"] { --tint1: #d3e3de; --tint2: #eef5f2; --tint3: #dbe8e3; }
+[data-weather="rain"], [data-weather="showers"] { --tint1: #c7dcd6; --tint2: #e3eeea; --tint3: #cfe0da; }
+[data-weather="thunder"] { --tint1: #b9c6bd; --tint2: #d7dfd9; --tint3: #aebcb2; }
+[data-weather="snow"] { --tint1: #e3edea; --tint2: #ffffff; --tint3: #dbe8e2; }
+[data-sky="night"][data-weather="clear"], [data-sky="night"][data-weather="partly"] { --tint1: #cdd8ea; --tint2: #f4f6fb; --tint3: #dde6f2; }
+[data-sky="night"][data-weather="cloudy"] { --tint1: #ced5d9; --tint2: #eef0f1; --tint3: #d6dbdd; }
+[data-sky="night"][data-weather="fog"] { --tint1: #d9dcdb; --tint2: #f2f3f2; --tint3: #dadedc; }
+[data-sky="night"][data-weather="drizzle"] { --tint1: #c3d0d6; --tint2: #e6edf0; --tint3: #cbd8dc; }
+[data-sky="night"][data-weather="rain"], [data-sky="night"][data-weather="showers"] { --tint1: #b6c6cd; --tint2: #dbe6ea; --tint3: #c0cfd4; }
+[data-sky="night"][data-weather="thunder"] { --tint1: #a7b0b8; --tint2: #ced4d8; --tint3: #9aa5ac; }
+[data-sky="night"][data-weather="snow"] { --tint1: #dde6ee; --tint2: #ffffff; --tint3: #d6e2ec; }

@@ -59,6 +59,13 @@ export default function WeatherBackdrop() {
     document.documentElement.dataset.sky = darkSky ? "night" : "day";
     return () => { delete document.documentElement.dataset.sky; };
   }, [darkSky]);
+  // Drives the weather-tinted card backgrounds (Reports/Active outbreaks tiles, How it works) — see
+  // [data-weather] + .weather-tint in globals.css — so those cards read as clear/cloudy/foggy/rainy/... too,
+  // not a fixed green regardless of what the rest of the page is showing.
+  useEffect(() => {
+    if (condition) document.documentElement.dataset.weather = condition.kind;
+    return () => { delete document.documentElement.dataset.weather; };
+  }, [condition]);
   if (!condition) return null;
   const key = `${condition.kind}-${condition.isDay ? "d" : "n"}`;
   const wind = weather?.windSpeed ?? 8;
