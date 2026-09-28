@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, FileText, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, UserCog, UserRound, Wind, X } from "lucide-react";
+import { Bell, FileText, History, Leaf, Languages, LogOut, MapPinned, Menu, ScanSearch, UserCog, UserRound, Wind, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useSeen } from "@/lib/seen";
 import { useAuth } from "@/lib/auth";
@@ -204,6 +204,11 @@ export default function Header() {
               {user && (
                 <Link href="/my-reports" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
                   <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
+                </Link>
+              )}
+              {user && (
+                <Link href="/chat-history" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                  <History className="size-4" aria-hidden /> {t("nav.chatHistory")}
                 </Link>
               )}
               <button

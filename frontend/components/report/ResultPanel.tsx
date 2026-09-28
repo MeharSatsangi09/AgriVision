@@ -10,6 +10,7 @@ import SampleBadge from "@/components/report/SampleBadge";
 import ReconciliationHero from "@/components/report/ReconciliationHero";
 import FollowUpBox from "@/components/report/FollowUpBox";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useAuth } from "@/lib/auth";
 import { useData, groupOutbreaks } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
 import { useTranslated } from "@/lib/useTranslated";
@@ -46,6 +47,7 @@ function phLabelKey(ph: number): string {
 
 export default function ResultPanel({ report, onAnother }: { report: Report; onAnother?: () => void }) {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
   const { reports } = useData();
   const tr = useTranslated(report, lang);
   const [copied, setCopied] = useState(false);
@@ -282,7 +284,7 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
         )}
 
         <motion.div variants={item}>
-          <FollowUpBox reportId={report.id} />
+          <FollowUpBox reportId={report.id} isOwner={!!user && report.uid === user.uid} />
         </motion.div>
 
         <motion.div variants={item} className="flex flex-wrap gap-2 pt-1">

@@ -18,7 +18,8 @@ service cloud.firestore {
         && ok(request.resource.data, 'state') && ok(request.resource.data, 'updatedAt');
       allow delete: if false;
 
-      match /followUpConversations/{conversationId} {
+      // One conversation per report: the doc id here IS the reportId (functions/index.ts).
+      match /followUpConversations/{reportId} {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow write: if false;
 

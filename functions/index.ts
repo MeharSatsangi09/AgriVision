@@ -182,15 +182,16 @@ export const translateUi = onCall({ region: REGION, maxInstances: 3, memory: "25
 // input reaches an LLM. Kept low-risk: the agent has no tools (no side effects it could be tricked into),
 // its instruction keeps it on-topic, the answer is shown only to the same person who asked it, nothing is
 // written back to the report, and maxInstances/length caps bound cost/abuse.
+//
+// One conversation per report (the conversation doc's id IS the reportId): a farmer has one ongoing thread
+// per diagnosis, not several to pick between, and only the report's own uploader may ever have one (checked
+// below) -- browsing someone else's report never creates or shows a conversation.
 export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 60 }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "log in first");
-  const { reportId, question, lang, conversationId } = (req.data ?? {}) as { reportId?: unknown; question?: unknown; lang?: unknown; conversationId?: unknown };
+  const { reportId, question, lang } = (req.data ?? {}) as { reportId?: unknown; question?: unknown; lang?: unknown };
   if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) {
     throw new HttpsError("invalid-argument", "a valid reportId is required");
-  }
-  if (conversationId !== undefined && (typeof conversationId !== "string" || !/^[A-Za-z0-9]{20}$/.test(conversationId))) {
-    throw new HttpsError("invalid-argument", "invalid conversationId");
   }
   const q = typeof question === "string" ? question.trim() : "";
   if (!q || q.length > 300) throw new HttpsError("invalid-argument", "question must be 1-300 characters");
@@ -202,12 +203,8 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
   if (r.uid !== uid) throw new HttpsError("permission-denied", "this report is not yours");
 
   const db = getFirestore();
-  const conversations = db.collection("users").doc(uid).collection("followUpConversations");
-  const conversationRef = conversationId ? conversations.doc(conversationId) : conversations.doc();
+  const conversationRef = db.collection("users").doc(uid).collection("followUpConversations").doc(reportId);
   const conversationSnap = await conversationRef.get();
-  if (conversationSnap.exists && conversationSnap.data()?.reportId !== reportId) {
-    throw new HttpsError("permission-denied", "conversation does not belong to this report");
-  }
   const historySnap = conversationSnap.exists
     ? await conversationRef.collection("messages").orderBy("createdAt", "desc").limit(12).get()
     : { docs: [] };
@@ -256,30 +253,32 @@ export const askFollowUpQuestion = onCall({ region: REGION, maxInstances: 3, mem
   batch.set(conversationRef, { updatedAt: new Date().toISOString(), lastMessage: answer.slice(0, 160), messageCount: (conversationSnap.data()?.messageCount ?? 0) + 2 }, { merge: true });
   await batch.commit();
 
-  return { conversationId: conversationRef.id, answer, lang: answerLang, translationFailed };
+  return { answer, lang: answerLang, translationFailed };
 });
 
-export const listFollowUpConversations = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
+// The one conversation for a single report (doc id == reportId), with its messages -- used to resume the thread
+// when the follow-up box opens on a report the farmer has already asked about. Ownership is enforced by path
+// (it can only ever read from the caller's own uid's subcollection), so no separate report-owner check is needed.
+export const getFollowUpConversation = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "log in first");
   const reportId = (req.data as { reportId?: unknown } | undefined)?.reportId;
   if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) throw new HttpsError("invalid-argument", "a valid reportId is required");
-  const report = await getFirestore().collection("reports").doc(reportId).get();
-  if (!report.exists || report.data()?.uid !== uid) throw new HttpsError("permission-denied", "this report is not yours");
-  const snap = await getFirestore().collection("users").doc(uid).collection("followUpConversations").where("reportId", "==", reportId).orderBy("updatedAt", "desc").limit(20).get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const ref = getFirestore().collection("users").doc(uid).collection("followUpConversations").doc(reportId);
+  const snap = await ref.get();
+  if (!snap.exists) return { exists: false, messages: [] };
+  const messages = await ref.collection("messages").orderBy("createdAt", "asc").limit(40).get();
+  return { exists: true, ...snap.data(), messages: messages.docs.map((doc) => ({ id: doc.id, ...doc.data() })) };
 });
 
-export const getFollowUpConversation = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
+// Every follow-up conversation the caller has, across all of their reports (newest activity first) -- powers the
+// "Chat history" page. Each row's reportId is looked up against the reports the app already loads client-side, so
+// nothing about another farmer's report needs to be denormalized here.
+export const listMyFollowUps = onCall({ region: REGION, maxInstances: 3, memory: "256MiB" }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "log in first");
-  const conversationId = (req.data as { conversationId?: unknown } | undefined)?.conversationId;
-  if (typeof conversationId !== "string" || !/^[A-Za-z0-9]{20}$/.test(conversationId)) throw new HttpsError("invalid-argument", "invalid conversationId");
-  const ref = getFirestore().collection("users").doc(uid).collection("followUpConversations").doc(conversationId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError("not-found", "conversation not found");
-  const messages = await ref.collection("messages").orderBy("createdAt", "asc").limit(40).get();
-  return { id: snap.id, ...snap.data(), messages: messages.docs.map((doc) => ({ id: doc.id, ...doc.data() })) };
+  const snap = await getFirestore().collection("users").doc(uid).collection("followUpConversations").orderBy("updatedAt", "desc").limit(50).get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 });
 
 // Cloud Speech-to-Text for the Follow-up box's mic button (frontend/components/report/FollowUpBox.tsx).

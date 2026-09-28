@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { httpsCallable } from "firebase/functions";
-import { Loader2, Mic, MessageCircleQuestion, Plus, Send, Square } from "lucide-react";
+import { History, Loader2, Mic, MessageCircleQuestion, Send, Square } from "lucide-react";
 import { functions } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
 interface Answer {
-  conversationId: string;
   answer: string;
   lang: string;
   translationFailed?: boolean;
@@ -20,16 +20,8 @@ interface ChatMessage {
   lang?: string;
 }
 
-interface ConversationSummary {
-  id: string;
-  title: string;
-  updatedAt: string;
-  lastMessage: string;
-}
-
-const askFollowUpQuestion = httpsCallable<{ reportId: string; question: string; lang: string; conversationId?: string }, Answer>(functions, "askFollowUpQuestion");
-const listConversations = httpsCallable<{ reportId: string }, ConversationSummary[]>(functions, "listFollowUpConversations");
-const getConversation = httpsCallable<{ conversationId: string }, { messages: ChatMessage[] }>(functions, "getFollowUpConversation");
+const askFollowUpQuestion = httpsCallable<{ reportId: string; question: string; lang: string }, Answer>(functions, "askFollowUpQuestion");
+const getConversation = httpsCallable<{ reportId: string }, { exists: boolean; messages: ChatMessage[] }>(functions, "getFollowUpConversation");
 const transcribeSpeech = httpsCallable<{ audio: string; langCode: string }, { transcript: string; confidence: number }>(functions, "transcribeSpeech");
 
 // BCP-47 tags — must match lib/languages.ts's app language codes and functions/tools/speechTool.ts's
@@ -49,16 +41,17 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-// Agent 5 — a grounded question-and-answer box for THIS report. One question, one answer at a time
-// (no chat thread), per followup-agent-task.md's scope. Additive: doesn't touch the existing result display.
-export default function FollowUpBox({ reportId }: { reportId: string }) {
+// Agent 5 — a grounded question-and-answer thread for THIS report, only for the farmer who uploaded it (the
+// backend rejects anyone else). One saved, continuous conversation per report — no separate threads to pick
+// between — so it just resumes on mount if the farmer has asked before. A "Chat history" link opens every
+// report's conversations in one place (components/chathistory/ChatHistoryView.tsx).
+export default function FollowUpBox({ reportId, isOwner }: { reportId: string; isOwner: boolean }) {
   const { t, lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -66,39 +59,22 @@ export default function FollowUpBox({ reportId }: { reportId: string }) {
   const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    if (!user) {
-      setConversations([]);
-      setConversationId(null);
+    if (!user || !isOwner) {
       setMessages([]);
+      setLoadingHistory(false);
       return;
     }
     let cancelled = false;
-    listConversations({ reportId }).then(({ data }) => {
-      if (!cancelled) setConversations(data);
+    setLoadingHistory(true);
+    getConversation({ reportId }).then(({ data }) => {
+      if (!cancelled) setMessages(data.messages);
     }).catch(() => {
-      if (!cancelled) setConversations([]);
+      if (!cancelled) setMessages([]);
+    }).finally(() => {
+      if (!cancelled) setLoadingHistory(false);
     });
     return () => { cancelled = true; };
-  }, [reportId, user]);
-
-  async function selectConversation(id: string) {
-    setStatus("loading");
-    try {
-      const { data } = await getConversation({ conversationId: id });
-      setConversationId(id);
-      setMessages(data.messages);
-      setStatus("idle");
-    } catch {
-      setStatus("error");
-    }
-  }
-
-  function newConversation() {
-    setConversationId(null);
-    setMessages([]);
-    setQuestion("");
-    setStatus("idle");
-  }
+  }, [reportId, user, isOwner]);
 
   // Feature-detected client-side, after mount, so server and first-client render match (no SSR window
   // access). Requires getUserMedia + MediaRecorder + the exact codec speechTool.ts expects — anything
@@ -161,47 +137,45 @@ export default function FollowUpBox({ reportId }: { reportId: string }) {
     if (!q || status === "loading" || !user) return;
     setStatus("loading");
     try {
-      const res = await askFollowUpQuestion({ reportId, question: q, lang, ...(conversationId ? { conversationId } : {}) });
-      setConversationId(res.data.conversationId);
+      const res = await askFollowUpQuestion({ reportId, question: q, lang });
       setMessages((current) => [
         ...current,
-        { id: `${res.data.conversationId}-user-${Date.now()}`, role: "user", text: q, lang },
-        { id: `${res.data.conversationId}-assistant-${Date.now()}`, role: "assistant", text: res.data.answer, lang: res.data.lang },
+        { id: `user-${Date.now()}`, role: "user", text: q, lang },
+        { id: `assistant-${Date.now()}`, role: "assistant", text: res.data.answer, lang: res.data.lang },
       ]);
       setQuestion("");
       setStatus("idle");
-      const updated = await listConversations({ reportId });
-      setConversations(updated.data);
     } catch {
       setStatus("error");
     }
   }
 
+  // Not the report's own uploader: no thread exists or ever will for this viewer, so nothing to show.
+  if (!isOwner) return null;
   if (authLoading) return <section className="rounded-xl border bg-background p-3.5 text-sm text-muted-foreground">…</section>;
-  if (!user) return <section className="rounded-xl border bg-background p-3.5 text-sm text-muted-foreground">Sign in to save and continue follow-up conversations.</section>;
+  if (!user) return <section className="rounded-xl border bg-background p-3.5 text-sm text-muted-foreground">{t("followup.signIn")}</section>;
 
   return (
     <section className="rounded-xl border bg-background p-3.5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold"><MessageCircleQuestion className="size-4 text-primary" /> {t("followup.label")}</h3>
-        <button type="button" onClick={newConversation} className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition hover:bg-muted"><Plus className="size-3.5" /> New chat</button>
+        <Link href="/chat-history" className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition hover:bg-muted">
+          <History className="size-3.5" /> {t("followup.history")}
+        </Link>
       </div>
-      {conversations.length > 0 && (
-        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-          {conversations.map((conversation) => (
-            <button key={conversation.id} type="button" onClick={() => selectConversation(conversation.id)} className={`max-w-48 shrink-0 truncate rounded-lg border px-2.5 py-1.5 text-left text-xs transition ${conversation.id === conversationId ? "border-primary bg-accent text-accent-foreground" : "bg-card hover:bg-muted"}`} title={conversation.title}>{conversation.title}</button>
-          ))}
-        </div>
-      )}
-      {messages.length > 0 && (
-        <div className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-lg bg-card p-2">
-          {messages.map((message) => (
-            <div key={message.id} className={`rounded-lg p-2.5 text-sm ${message.role === "assistant" ? "bg-accent text-accent-foreground" : "ml-8 bg-muted"}`}>
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-60">{message.role === "assistant" ? t("followup.answerLabel") : "You"}</p>
-              <p className="whitespace-pre-line leading-relaxed">{message.text}</p>
-            </div>
-          ))}
-        </div>
+      {loadingHistory ? (
+        <div className="mt-3 h-3 w-2/5 animate-pulse rounded bg-muted" />
+      ) : (
+        messages.length > 0 && (
+          <div className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-lg bg-card p-2">
+            {messages.map((message) => (
+              <div key={message.id} className={`rounded-lg p-2.5 text-sm ${message.role === "assistant" ? "bg-accent text-accent-foreground" : "ml-8 bg-muted"}`}>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-60">{message.role === "assistant" ? t("followup.answerLabel") : t("followup.you")}</p>
+                <p className="whitespace-pre-line leading-relaxed">{message.text}</p>
+              </div>
+            ))}
+          </div>
+        )
       )}
       <form onSubmit={submit} className="mt-2 flex gap-2">
         <input

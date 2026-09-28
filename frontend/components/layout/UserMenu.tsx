@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { FileText, LogOut, UserCog, UserRound, Wind } from "lucide-react";
+import { FileText, History, LogOut, UserCog, UserRound, Wind } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useReduceMotion } from "@/lib/reduceMotion";
@@ -100,6 +100,9 @@ export default function UserMenu() {
             </Link>
             <Link href="/my-reports" role="menuitem" onClick={() => setOpen(false)} className={item}>
               <FileText className="size-4" aria-hidden /> {t("nav.myReports")}
+            </Link>
+            <Link href="/chat-history" role="menuitem" onClick={() => setOpen(false)} className={item}>
+              <History className="size-4" aria-hidden /> {t("nav.chatHistory")}
             </Link>
             <button type="button" role="menuitemcheckbox" aria-checked={reduce} onClick={() => setReduce(!reduce)} className={item}>
               <Wind className="size-4" aria-hidden /> <span className="flex-1">{t("account.reduceMotion")}</span>
