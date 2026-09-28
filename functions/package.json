@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google-cloud/speech": "^8.1.0",
+    "@google-cloud/text-to-speech": "^7.1.0",
     "@google/adk": "^2.1.0",
     "@google/earthengine": "^1.7.45",
     "@tensorflow/tfjs": "^4.22.0",

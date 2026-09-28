@@ -12,6 +12,7 @@ import { writeReport, firestoreTrendStore } from "./tools/firestoreTools";
 import { isLang, translateTexts } from "./tools/translate";
 import { inIndia } from "./tools/india";
 import { transcribeAudio } from "./tools/speechTool";
+import { synthesizeSpeech } from "./tools/ttsTool";
 import { uploaderUid } from "./tools/uploader";
 import { transliterate } from "./agents/transliterationAgent";
 
@@ -299,6 +300,25 @@ export const transcribeSpeech = onCall({ region: REGION, maxInstances: 3, memory
   } catch (err) {
     console.error("transcribeSpeech failed:", err);
     throw new HttpsError("unavailable", "transcription unavailable");
+  }
+});
+
+// Cloud Text-to-Speech for the Follow-up box's "listen" button: reads a follow-up answer aloud in the farmer's
+// language, the other half of the voice loop from transcribeSpeech above. Login-gated and length-capped like the
+// rest of the follow-up flow; the text itself is always something WE already generated and returned to this same
+// caller (an answer from askFollowUpQuestion), never arbitrary farmer input, so there is nothing new to sanitize.
+export const readFollowUpAnswer = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 30 }, async (req) => {
+  if (!req.auth?.uid) throw new HttpsError("unauthenticated", "log in first");
+  const { text, langCode } = (req.data ?? {}) as { text?: unknown; langCode?: unknown };
+  if (typeof text !== "string" || !text.trim() || text.length > 1000) throw new HttpsError("invalid-argument", "text (1-1000 chars) is required");
+  const lang = typeof langCode === "string" && /^[a-z]{2}-[A-Z]{2}$/.test(langCode) ? langCode : "en-IN";
+
+  try {
+    const { audio } = await synthesizeSpeech(text, lang);
+    return { audio };
+  } catch (err) {
+    console.error("readFollowUpAnswer failed:", err);
+    throw new HttpsError("unavailable", "speech unavailable");
   }
 });
 

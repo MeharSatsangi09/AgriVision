@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Camera, ImagePlus, Lightbulb, ScanSearch, X } from "lucide-react";
+import { Camera, ImagePlus, Lightbulb, ScanSearch, TriangleAlert, X } from "lucide-react";
 import { Tilt } from "@/components/core/tilt";
 import LocationPicker from "@/components/diagnose/LocationPicker";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { assessPhotoQuality, type QualityIssue } from "@/lib/photoQuality";
 import type { LatLng } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,10 +22,12 @@ export default function UploadCard({
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [problem, setProblem] = useState("");
+  const [quality, setQuality] = useState<QualityIssue | null>(null);
   const [location, setLocation] = useState<LatLng | null>(null);
   const [drag, setDrag] = useState(false);
   const pickInput = useRef<HTMLInputElement>(null);
   const camInput = useRef<HTMLInputElement>(null);
+  const pickToken = useRef(0); // guards against a stale quality result winning a race if two photos are picked quickly
 
   useEffect(() => {
     if (!file) return setPreview("");
@@ -35,11 +38,18 @@ export default function UploadCard({
 
   function pick(f: File | null | undefined) {
     setProblem("");
+    setQuality(null);
     if (!f) return;
     if (!f.type.startsWith("image/")) return setProblem(t("err.notImage"));
     // Photos are compressed before upload, so only reject truly huge originals.
     if (f.size > MAX_BYTES * 5) return setProblem(t("err.tooBig"));
     setFile(f);
+    // Advisory only — never blocks the upload, just nudges toward a better photo. Runs after setFile so the
+    // preview shows immediately; the check itself is a few milliseconds on a downscaled canvas.
+    const token = ++pickToken.current;
+    assessPhotoQuality(f).then((q) => {
+      if (token === pickToken.current) setQuality(q);
+    });
   }
 
   const ready = !!file && !!location;
@@ -84,7 +94,7 @@ export default function UploadCard({
                 />
                 <motion.button
                   type="button"
-                  onClick={() => setFile(null)}
+                  onClick={() => (setFile(null), setQuality(null))}
                   aria-label={t("upload.change")}
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -142,6 +152,25 @@ export default function UploadCard({
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
             <Lightbulb className="mt-0.5 size-3.5 shrink-0" /> {t("upload.tip")}
           </p>
+          {quality && (quality.blurry || quality.dark || quality.bright) && (
+            <div className="mt-2 space-y-1">
+              {quality.blurry && (
+                <p className="flex items-start gap-1.5 rounded-lg bg-severity-medium/10 px-2.5 py-1.5 text-xs text-severity-medium">
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0" /> {t("upload.quality.blurry")}
+                </p>
+              )}
+              {quality.dark && (
+                <p className="flex items-start gap-1.5 rounded-lg bg-severity-medium/10 px-2.5 py-1.5 text-xs text-severity-medium">
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0" /> {t("upload.quality.dark")}
+                </p>
+              )}
+              {quality.bright && (
+                <p className="flex items-start gap-1.5 rounded-lg bg-severity-medium/10 px-2.5 py-1.5 text-xs text-severity-medium">
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0" /> {t("upload.quality.bright")}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Location */}

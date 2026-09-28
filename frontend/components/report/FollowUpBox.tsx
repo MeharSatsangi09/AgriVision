@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { httpsCallable } from "firebase/functions";
-import { History, Loader2, Mic, MessageCircleQuestion, Send, Square } from "lucide-react";
+import { History, Loader2, Mic, MessageCircleQuestion, Send, Square, Volume2 } from "lucide-react";
 import { functions } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -23,6 +23,7 @@ interface ChatMessage {
 const askFollowUpQuestion = httpsCallable<{ reportId: string; question: string; lang: string }, Answer>(functions, "askFollowUpQuestion");
 const getConversation = httpsCallable<{ reportId: string }, { exists: boolean; messages: ChatMessage[] }>(functions, "getFollowUpConversation");
 const transcribeSpeech = httpsCallable<{ audio: string; langCode: string }, { transcript: string; confidence: number }>(functions, "transcribeSpeech");
+const readFollowUpAnswer = httpsCallable<{ text: string; langCode: string }, { audio: string }>(functions, "readFollowUpAnswer");
 
 // BCP-47 tags — must match lib/languages.ts's app language codes and functions/tools/speechTool.ts's
 // SUPPORTED_LANGS.
@@ -57,6 +58,17 @@ export default function FollowUpBox({ reportId, isOwner }: { reportId: string; i
   const [transcribing, setTranscribing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Map<string, string>>(new Map()); // message id -> object URL, so replaying doesn't re-call the API
+
+  useEffect(() => {
+    return () => {
+      audioElRef.current?.pause();
+      audioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   useEffect(() => {
     if (!user || !isOwner) {
@@ -131,6 +143,41 @@ export default function FollowUpBox({ reportId, isOwner }: { reportId: string; i
     recorder.start();
   }
 
+  // Reads one assistant message aloud (Cloud TTS). Cached per message so replaying is instant and doesn't
+  // spend quota twice; stops whatever else is playing first, so only one answer speaks at a time.
+  async function listen(message: ChatMessage) {
+    audioElRef.current?.pause();
+    if (playingId === message.id) {
+      setPlayingId(null);
+      return;
+    }
+    const cached = audioCacheRef.current.get(message.id);
+    if (cached) {
+      const el = new Audio(cached);
+      audioElRef.current = el;
+      el.onended = () => setPlayingId(null);
+      setPlayingId(message.id);
+      el.play().catch(() => setPlayingId(null));
+      return;
+    }
+    setLoadingAudioId(message.id);
+    try {
+      const res = await readFollowUpAnswer({ text: message.text, langCode: SPEECH_LANG[message.lang ?? lang] ?? "en-IN" });
+      const blob = await (await fetch(`data:audio/mp3;base64,${res.data.audio}`)).blob();
+      const url = URL.createObjectURL(blob);
+      audioCacheRef.current.set(message.id, url);
+      const el = new Audio(url);
+      audioElRef.current = el;
+      el.onended = () => setPlayingId(null);
+      setPlayingId(message.id);
+      await el.play().catch(() => setPlayingId(null));
+    } catch {
+      // TTS unavailable (network, quota, API not yet enabled) — the text answer is still there either way.
+    } finally {
+      setLoadingAudioId(null);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = question.trim().slice(0, 300);
@@ -170,7 +217,27 @@ export default function FollowUpBox({ reportId, isOwner }: { reportId: string; i
           <div className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-lg bg-card p-2">
             {messages.map((message) => (
               <div key={message.id} className={`rounded-lg p-2.5 text-sm ${message.role === "assistant" ? "bg-accent text-accent-foreground" : "ml-8 bg-muted"}`}>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-60">{message.role === "assistant" ? t("followup.answerLabel") : t("followup.you")}</p>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-60">{message.role === "assistant" ? t("followup.answerLabel") : t("followup.you")}</p>
+                  {message.role === "assistant" && (
+                    <button
+                      type="button"
+                      onClick={() => listen(message)}
+                      disabled={loadingAudioId === message.id}
+                      aria-label={t(playingId === message.id ? "followup.stopListening" : "followup.listen")}
+                      aria-pressed={playingId === message.id}
+                      className="inline-flex shrink-0 items-center justify-center rounded-full p-1 text-primary/70 transition hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                    >
+                      {loadingAudioId === message.id ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : playingId === message.id ? (
+                        <Square className="size-3.5 fill-current" />
+                      ) : (
+                        <Volume2 className="size-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
                 <p className="whitespace-pre-line leading-relaxed">{message.text}</p>
               </div>
             ))}
