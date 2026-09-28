@@ -2,20 +2,28 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Check, Cpu, Lightbulb, Link2, MapPin, RotateCcw, Satellite, Sprout, TriangleAlert } from "lucide-react";
+import { httpsCallable } from "firebase/functions";
+import { Check, Cpu, Lightbulb, Link2, Loader2, MapPin, RotateCcw, Satellite, Sprout, Square, TriangleAlert, Volume2 } from "lucide-react";
 import { Progress } from "@/components/animate-ui/components/radix/progress";
 import { SlidingNumber } from "@/components/animate-ui/primitives/texts/sliding-number";
 import SeverityBadge from "@/components/report/SeverityBadge";
 import SampleBadge from "@/components/report/SampleBadge";
 import ReconciliationHero from "@/components/report/ReconciliationHero";
 import FollowUpBox from "@/components/report/FollowUpBox";
+import { functions } from "@/lib/firebase";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useAuth } from "@/lib/auth";
 import { useData, groupOutbreaks } from "@/lib/data";
 import { useSeen } from "@/lib/seen";
+import { useSpeech } from "@/lib/useSpeech";
 import { useTranslated } from "@/lib/useTranslated";
 import { roundCoord, timeAgo } from "@/lib/format";
 import type { Report } from "@/lib/types";
+
+// No login or ownership needed — this reads back exactly the diagnosis/advice text already shown publicly on
+// the report page (the server builds the spoken text itself from the report's own fields; see readReportSummary
+// in functions/index.ts). Unlike the follow-up chat, any visitor can use it.
+const readReportSummary = httpsCallable<{ reportId: string; lang: string }, { audio: string }>(functions, "readReportSummary");
 
 // Staggered reveal for the report's sections — phases.md calls this "the emotional payoff moment of the demo."
 const container = {
@@ -52,6 +60,12 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
   const tr = useTranslated(report, lang);
   const [copied, setCopied] = useState(false);
   const { loaded, markSeen } = useSeen();
+  const { playingId: speechPlayingId, loadingId: speechLoadingId, toggle: toggleSpeech } = useSpeech();
+  const listenToReport = () =>
+    toggleSpeech(report.id, async () => {
+      const res = await readReportSummary({ reportId: report.id, lang });
+      return res.data.audio;
+    });
   const d = report.diagnosis;
   const pct = Math.round(d.confidence * 100);
   const unclear = d.disease.toLowerCase() === "unclear";
@@ -121,6 +135,24 @@ export default function ResultPanel({ report, onAnother }: { report: Report; onA
             <h2 className="text-2xl font-semibold tracking-tight">{tr.disease}</h2>
             {!unclear && !healthy && <SeverityBadge severity={d.severity} />}
             {report.isSeeded && <SampleBadge />}
+            <button
+              type="button"
+              onClick={listenToReport}
+              disabled={speechLoadingId === report.id}
+              aria-label={t(speechPlayingId === report.id ? "result.stopListening" : "result.listen")}
+              aria-pressed={speechPlayingId === report.id}
+              title={t(speechPlayingId === report.id ? "result.stopListening" : "result.listen")}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-primary transition hover:bg-primary/10 disabled:opacity-50"
+            >
+              {speechLoadingId === report.id ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : speechPlayingId === report.id ? (
+                <Square className="size-3.5 fill-current" />
+              ) : (
+                <Volume2 className="size-3.5" />
+              )}
+              {t(speechPlayingId === report.id ? "result.stopListening" : "result.listen")}
+            </button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {timeAgo(report.timestamp, lang)} · {roundCoord(report.lat)}°N, {roundCoord(report.lng)}°E

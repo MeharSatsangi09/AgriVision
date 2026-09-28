@@ -6,6 +6,7 @@ import { History, Loader2, Mic, MessageCircleQuestion, Send, Square, Volume2 } f
 import { functions } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useSpeech } from "@/lib/useSpeech";
 
 interface Answer {
   answer: string;
@@ -58,17 +59,7 @@ export default function FollowUpBox({ reportId, isOwner }: { reportId: string; i
   const [transcribing, setTranscribing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const audioCacheRef = useRef<Map<string, string>>(new Map()); // message id -> object URL, so replaying doesn't re-call the API
-
-  useEffect(() => {
-    return () => {
-      audioElRef.current?.pause();
-      audioCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, []);
+  const { playingId, loadingId: loadingAudioId, toggle: toggleSpeech } = useSpeech();
 
   useEffect(() => {
     if (!user || !isOwner) {
@@ -143,39 +134,12 @@ export default function FollowUpBox({ reportId, isOwner }: { reportId: string; i
     recorder.start();
   }
 
-  // Reads one assistant message aloud (Cloud TTS). Cached per message so replaying is instant and doesn't
-  // spend quota twice; stops whatever else is playing first, so only one answer speaks at a time.
-  async function listen(message: ChatMessage) {
-    audioElRef.current?.pause();
-    if (playingId === message.id) {
-      setPlayingId(null);
-      return;
-    }
-    const cached = audioCacheRef.current.get(message.id);
-    if (cached) {
-      const el = new Audio(cached);
-      audioElRef.current = el;
-      el.onended = () => setPlayingId(null);
-      setPlayingId(message.id);
-      el.play().catch(() => setPlayingId(null));
-      return;
-    }
-    setLoadingAudioId(message.id);
-    try {
+  // Reads one assistant message aloud (Cloud TTS), via the shared play/stop hook.
+  function listen(message: ChatMessage) {
+    toggleSpeech(message.id, async () => {
       const res = await readFollowUpAnswer({ text: message.text, langCode: SPEECH_LANG[message.lang ?? lang] ?? "en-IN" });
-      const blob = await (await fetch(`data:audio/mp3;base64,${res.data.audio}`)).blob();
-      const url = URL.createObjectURL(blob);
-      audioCacheRef.current.set(message.id, url);
-      const el = new Audio(url);
-      audioElRef.current = el;
-      el.onended = () => setPlayingId(null);
-      setPlayingId(message.id);
-      await el.play().catch(() => setPlayingId(null));
-    } catch {
-      // TTS unavailable (network, quota, API not yet enabled) — the text answer is still there either way.
-    } finally {
-      setLoadingAudioId(null);
-    }
+      return res.data.audio;
+    });
   }
 
   async function submit(e: React.FormEvent) {

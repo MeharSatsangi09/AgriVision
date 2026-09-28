@@ -322,6 +322,64 @@ export const readFollowUpAnswer = onCall({ region: REGION, maxInstances: 3, memo
   }
 });
 
+const BCP47: Record<string, string> = {
+  en: "en-IN", hi: "hi-IN", mr: "mr-IN", ta: "ta-IN", te: "te-IN", bn: "bn-IN", gu: "gu-IN", kn: "kn-IN", pa: "pa-IN",
+};
+const SEVERITY_WORD: Record<string, Record<string, string>> = {
+  en: { low: "low severity", medium: "medium severity", high: "high severity" },
+  hi: { low: "कम गंभीरता", medium: "मध्यम गंभीरता", high: "अधिक गंभीरता" },
+  mr: { low: "कमी तीव्रता", medium: "मध्यम तीव्रता", high: "जास्त तीव्रता" },
+  ta: { low: "குறைந்த தீவிரம்", medium: "நடுத்தர தீவிரம்", high: "அதிக தீவிரம்" },
+  te: { low: "తక్కువ తీవ్రత", medium: "మధ్యస్థ తీవ్రత", high: "అధిక తీవ్రత" },
+  bn: { low: "কম মাত্রা", medium: "মাঝারি মাত্রা", high: "বেশি মাত্রা" },
+  gu: { low: "ઓછી તીવ્રતા", medium: "મધ્યમ તીવ્રતા", high: "વધુ તીવ્રતા" },
+  kn: { low: "ಕಡಿಮೆ ತೀವ್ರತೆ", medium: "ಮಧ್ಯಮ ತೀವ್ರತೆ", high: "ಹೆಚ್ಚಿನ ತೀವ್ರತೆ" },
+  pa: { low: "ਘੱਟ ਗੰਭੀਰਤਾ", medium: "ਦਰਮਿਆਨੀ ਗੰਭੀਰਤਾ", high: "ਵਧੇਰੇ ਗੰਭੀਰਤਾ" },
+};
+const HEALTHY_TEXT: Record<string, string> = {
+  en: "This crop looks healthy.", hi: "यह फसल स्वस्थ दिख रही है।", mr: "हे पीक निरोगी दिसत आहे.",
+  ta: "இந்த பயிர் ஆரோக்கியமாக உள்ளது.", te: "ఈ పంట ఆరోగ్యంగా ఉంది.", bn: "এই ফসলটি সুস্থ দেখাচ্ছে।",
+  gu: "આ પાક તંદુરસ્ત દેખાય છે.", kn: "ಈ ಬೆಳೆ ಆರೋಗ್ಯಕರವಾಗಿ ಕಾಣುತ್ತದೆ.", pa: "ਇਹ ਫ਼ਸਲ ਸਿਹਤਮੰਦ ਲੱਗ ਰਹੀ ਹੈ।",
+};
+
+// Reads a report's OWN diagnosis, severity and advice aloud, for anyone viewing that report -- not gated by
+// login or ownership, since this is exactly the text already shown publicly on the report page (reports are
+// public-read). Unlike readFollowUpAnswer, the spoken text is never client-supplied: it is always built here
+// from the report's own stored/translated fields by reportId, so there is no way to use this as a free-form
+// text-to-speech proxy.
+export const readReportSummary = onCall({ region: REGION, maxInstances: 3, memory: "256MiB", timeoutSeconds: 30 }, async (req) => {
+  const { reportId, lang } = (req.data ?? {}) as { reportId?: unknown; lang?: unknown };
+  if (typeof reportId !== "string" || !/^[A-Za-z0-9]{10,40}$/.test(reportId)) {
+    throw new HttpsError("invalid-argument", "a valid reportId is required");
+  }
+  const appLang = isLang(lang) ? lang : "en";
+
+  const snap = await getFirestore().collection("reports").doc(reportId).get();
+  if (!snap.exists) throw new HttpsError("not-found", "report not found");
+  const r = snap.data()!;
+  const disease = String(r.diagnosis?.disease ?? "unclear").toLowerCase();
+  const severity = String(r.diagnosis?.severity ?? "low");
+  const diseaseName = r.diseaseTranslations?.[appLang] || r.diagnosis?.disease || disease;
+  const advisory = r.advisoryTranslations?.[appLang] || r.advisory || "";
+  const tip = r.regenerativeTipTranslations?.[appLang] || r.regenerativeTip || "";
+
+  const parts: string[] = [];
+  if (disease === "healthy") parts.push(HEALTHY_TEXT[appLang] ?? HEALTHY_TEXT.en);
+  else parts.push(`${diseaseName}. ${SEVERITY_WORD[appLang]?.[severity] ?? SEVERITY_WORD.en[severity] ?? severity}.`);
+  if (advisory) parts.push(advisory);
+  if (tip) parts.push(tip);
+  const text = parts.join(" ").slice(0, 1200);
+  if (!text) throw new HttpsError("failed-precondition", "nothing to read for this report");
+
+  try {
+    const { audio } = await synthesizeSpeech(text, BCP47[appLang] ?? "en-IN");
+    return { audio };
+  } catch (err) {
+    console.error("readReportSummary failed:", err);
+    throw new HttpsError("unavailable", "speech unavailable");
+  }
+});
+
 // The logged-in user's own profile text (name, village/town, district), shown in the site's current language by
 // TRANSLITERATING it (same name, other script; plain machine translation gets names wrong). Only the caller's own
 // users/{uid} document is read. Results are cached on it under `translations.<lang>`; the client overwrites the whole

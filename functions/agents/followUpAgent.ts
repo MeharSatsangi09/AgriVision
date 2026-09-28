@@ -57,6 +57,7 @@ export async function askFollowUp(context: FollowUpContext, question: string): P
         advisory: context.advisory,
         location: context.location,
         reconciliationSummary: context.reconciliationSummary ?? "",
+        conversationHistory: context.conversationHistory ?? "(new conversation)",
       },
     });
 
