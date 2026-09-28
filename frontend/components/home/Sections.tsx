@@ -452,6 +452,12 @@ export function HowItWorks() {
           </motion.div>
         ))}
       </div>
+      <motion.div initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.3 }} variants={item} className="relative z-10 mt-6">
+        <div className="overflow-hidden rounded-2xl border border-primary/15 bg-[#0f2a19] shadow-sm">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption -- no spoken audio; captions burned into the visuals */}
+          <video src="/how-it-works.mp4" controls playsInline preload="metadata" className="block aspect-video w-full" />
+        </div>
+      </motion.div>
     </section>
   );
 }
