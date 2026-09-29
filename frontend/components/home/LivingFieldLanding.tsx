@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { useReduceMotion } from "@/lib/reduceMotion";
-import { ArrowUpRight, Leaf, MoveDown, Video } from "lucide-react";
+import { ArrowUpRight, Leaf, MoveDown, Video, VideoOff } from "lucide-react";
 
 const VIDEO_BG_KEY = "landingVideoBg";
 
@@ -267,9 +267,9 @@ export default function LivingFieldLanding() {
                             whileHover={{ scale: 1.06, y: -1 }}
                             whileTap={{ scale: 0.95 }}
                             transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                            className={`pointer-events-auto grid size-9 place-items-center rounded-full border backdrop-blur-sm transition-colors ${videoOn ? "border-white/60 bg-white/20" : "border-white/30 bg-black/10"}`}
+                            className={`pointer-events-auto grid size-11 place-items-center rounded-full border-2 shadow-[0_2px_16px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors ${videoOn ? "border-white bg-black/55" : "border-white/70 bg-black/70"}`}
                         >
-                            <Video className="size-4" />
+                            {videoOn ? <Video className="size-5 text-white" /> : <VideoOff className="size-5 text-white" />}
                         </motion.button>
                     )}
                 </div>
