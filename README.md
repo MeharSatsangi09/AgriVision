@@ -31,10 +31,14 @@
 | **Advice that fits the day** | The advisory agent reads the local weather forecast to say *when* to spray or wait, and adds a regenerative-farming tip. |
 | **Field context** | Satellite vegetation health (Earth Engine NDVI) and soil data (ISRIC SoilGrids) are added when available. They never block a report. |
 | **Outbreak alerts** | 3 or more reports of the same disease within 50 km in 7 days raise an outbreak: a ring on the map and an entry on the Alerts page. |
-| **Ask a follow-up** | A grounded follow-up agent answers questions about a report, by text or by voice (Speech-to-Text). |
-| **Nine languages** | English, Hindi, Marathi, Tamil, Telugu, Bengali, Gujarati, Kannada, Punjabi. Advice is translated on demand; disease and state names use a curated dictionary. |
+| **Ask a follow-up, with memory** | A grounded follow-up agent holds a saved, multi-turn conversation per report, by text or by voice (Speech-to-Text). Reopening a report picks the thread back up; a Chat History page lists every conversation across all of a farmer's reports. |
+| **Listen to a report** | Any visitor can have a report's diagnosis and advice read aloud (Cloud Text-to-Speech), and a farmer can have any follow-up answer read back too — both in the app's current language. |
+| **Nine languages** | English, Hindi, Marathi, Tamil, Telugu, Bengali, Gujarati, Kannada, Punjabi. Advice is translated on demand; disease and state names use a curated dictionary; profile names/places are transliterated, not machine-translated. |
 | **Community** | Phone-number login, My Reports, a community feed with generated names that cannot be linked to a person, and a private profile. |
-| **Weather-aware site** | A weather card (today's hours and 7 days) and a full-page scene that follows the real weather. |
+| **Weather-aware site** | A weather card (today's hours and 7 days), a full-page scene that follows the real weather, and weather-tinted stat tiles/panels so the UI's mood matches the sky. An optional background video on the landing page too. |
+| **Photo quality coach** | Checks a picked photo for blur or bad lighting on-device, instantly, before upload — a gentle tip, never a block. |
+| **Reduce motion** | A one-tap switch that turns off animation and weather effects, for low-end phones or anyone who prefers it. |
+| **Interoperability layer** | A public `/data` page and `/api/regional-data` JSON endpoint roll reports up by state — report counts, active outbreaks, top diseases — for researchers and policymakers, no login or key needed. |
 
 ## Architecture
 
@@ -52,7 +56,7 @@ The browser talks to Firebase directly (Auth, Storage upload, realtime Firestore
 | Auth | Firebase Auth (phone provider) | SMS-code login gating uploads and `/alerts`. |
 | Files | Cloud Storage | `uploads/` (create-only, phone-login uid must equal the file's `uid` metadata) and `models/` (classifier). |
 | Data | Cloud Firestore | `reports` (public read), `users/{uid}` (owner only), `uploadErrors`. No client writes to reports. |
-| Compute | Cloud Functions (Node 22, `asia-south1`) | `processUpload`, `scheduledTrendCheck`, `translateReport`, `translateUi`, `translateProfile`, `askFollowUpQuestion`, `transcribeSpeech`. |
+| Compute | Cloud Functions (Node 22, `asia-south1`) | `processUpload`, `scheduledTrendCheck`, `translateReport`, `translateUi`, `translateProfile`, `askFollowUpQuestion`, `getFollowUpConversation`, `listMyFollowUps`, `transcribeSpeech`, `readFollowUpAnswer`, `readReportSummary`. |
 | AI | Google ADK on Gemini | Diagnosis, Advisory, Trend/Alert, Reconciliation, Follow-up, Transliteration agents. |
 | ML | TensorFlow.js MobileNetV2 | 38 PlantVillage classes, loaded from Storage inside the function. |
 | Data APIs | Earth Engine, SoilGrids, OpenWeatherMap (backend); Open-Meteo, Google Maps (browser) | Field, soil and weather context; map and weather UI. |
@@ -220,4 +224,4 @@ For local login tests, `NEXT_PUBLIC_AUTH_EMULATOR=1` points the app at the Fireb
 
 ## Team
 
-Built for a hackathon.
+Built for a hackathon by **Mehar Satsangi**, [**Bhakti Johri**](https://github.com/BhaktiJohri), and [**Palak Gupta**](https://github.com/PalaakGupta).
