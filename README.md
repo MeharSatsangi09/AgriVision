@@ -224,4 +224,4 @@ For local login tests, `NEXT_PUBLIC_AUTH_EMULATOR=1` points the app at the Fireb
 
 ## Team
 
-Built for a hackathon by **Mehar Satsangi**, [**Bhakti Johri**](https://github.com/BhaktiJohri), and [**Palak Gupta**](https://github.com/PalaakGupta).
+Built for a hackathon by **Mehar Satsangi**, [**Bhakti Johri**](https://github.com/BhaktiJohri). 
